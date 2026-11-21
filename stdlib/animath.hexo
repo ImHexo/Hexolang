@@ -1,0 +1,355 @@
+// Animath: mathematical scenes and SVG-based animations.
+// Coordinates are SVG pixels; x/y values are not implicitly transformed.
+import "stdlib/system/os.hexo" as os;
+import "stdlib/math.hexo" as math;
+
+fn escapeXML(value) {
+    let s = string(value);
+    s = s.replace("&", "&amp;");
+    s = s.replace("<", "&lt;");
+    s = s.replace(">", "&gt;");
+    s = s.replace("\"", "&quot;");
+    s = s.replace("'", "&apos;");
+    return s;
+}
+
+fn svg(width, height, content, background) {
+    if (background == nil) { background = "white"; }
+    return "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" + string(width) + "\" height=\"" + string(height) + "\" viewBox=\"0 0 " + string(width) + " " + string(height) + "\"><rect width=\"100%\" height=\"100%\" fill=\"" + escapeXML(background) + "\"/>" + content + "</svg>";
+}
+
+fn line(x1, y1, x2, y2, color, width) {
+    if (width == nil) { width = 2; }
+    if (color == nil) { color = "black"; }
+    return "<line x1=\"" + string(x1) + "\" y1=\"" + string(y1) + "\" x2=\"" + string(x2) + "\" y2=\"" + string(y2) + "\" stroke=\"" + escapeXML(color) + "\" stroke-width=\"" + string(width) + "\"/>";
+}
+
+fn circle(x, y, radius, color, fill) {
+    if (color == nil) { color = "black"; }
+    if (fill == nil) { fill = "none"; }
+    return "<circle cx=\"" + string(x) + "\" cy=\"" + string(y) + "\" r=\"" + string(radius) + "\" stroke=\"" + escapeXML(color) + "\" fill=\"" + escapeXML(fill) + "\"/>";
+}
+
+fn rectangle(x, y, width, height, color, fill) {
+    if (color == nil) { color = "black"; }
+    if (fill == nil) { fill = "none"; }
+    return "<rect x=\"" + string(x) + "\" y=\"" + string(y) + "\" width=\"" + string(width) + "\" height=\"" + string(height) + "\" stroke=\"" + escapeXML(color) + "\" fill=\"" + escapeXML(fill) + "\"/>";
+}
+
+fn text(x, y, value, color, size) {
+    if (color == nil) { color = "black"; }
+    if (size == nil) { size = 16; }
+    return "<text x=\"" + string(x) + "\" y=\"" + string(y) + "\" fill=\"" + escapeXML(color) + "\" font-size=\"" + string(size) + "\">" + escapeXML(value) + "</text>";
+}
+
+fn axes(width, height, originX, originY, color) {
+    if (color == nil) { color = "#333333"; }
+    return line(0, originY, width, originY, color, 1) + line(originX, 0, originX, height, color, 1);
+}
+
+fn grid(width, height, step, color) {
+    if (step == nil) { step = 25; }
+    if (color == nil) { color = "#e8e8e8"; }
+    let out = "";
+    for (let x in range(0, width + 1, step)) { out = out + line(x, 0, x, height, color, 1); }
+    for (let y in range(0, height + 1, step)) { out = out + line(0, y, width, y, color, 1); }
+    return out;
+}
+
+fn polyline(points, color, width) {
+    if (color == nil) { color = "#1769aa"; }
+    if (width == nil) { width = 2; }
+    let data = "";
+    for (let p in points) { data = data + string(p[0]) + "," + string(p[1]) + " "; }
+    return "<polyline points=\"" + data.trim() + "\" fill=\"none\" stroke=\"" + escapeXML(color) + "\" stroke-width=\"" + string(width) + "\"/>";
+}
+
+fn plot(functionValue, xMin, xMax, yMin, yMax, width, height, samples, color) {
+    if (samples == nil) { samples = 200; }
+    if (color == nil) { color = "#1769aa"; }
+    if (xMax == xMin || yMax == yMin) { throw "animath.plot ranges cannot have zero width"; }
+    let points = [];
+    for (let i in range(0, samples + 1)) {
+        let x = xMin + (xMax - xMin) * i / samples;
+        let y = functionValue(x);
+        let px = (x - xMin) * width / (xMax - xMin);
+        let py = height - (y - yMin) * height / (yMax - yMin);
+        points.push([px, py]);
+    }
+    return polyline(points, color, 2);
+}
+
+fn animate(element, attribute, values, duration, repeat) {
+    if (duration == nil) { duration = "2s"; }
+    if (repeat == nil) { repeat = "indefinite"; }
+    let list = "";
+    for (let i in range(0, len(values))) {
+        if (i > 0) { list = list + ";"; }
+        list = list + string(values[i]);
+    }
+    return element + "<animate attributeName=\"" + escapeXML(attribute) + "\" values=\"" + escapeXML(list) + "\" dur=\"" + string(duration) + "\" repeatCount=\"" + string(repeat) + "\"/>";
+}
+
+fn saveSVG(path, width, height, content, background) {
+    return os.writeText(path, svg(width, height, content, background));
+}
+
+fn htmlDocument(svgContent, title) {
+    if (title == nil) { title = "Animath"; }
+    return "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>" + escapeXML(title) + "</title></head><body style=\"margin:0;display:grid;place-items:center;min-height:100vh\">" + svgContent + "</body></html>";
+}
+
+fn saveHTML(path, svgContent, title) { return os.writeText(path, htmlDocument(svgContent, title)); }
+
+
+// Easing and timeline helpers; t is normalized to [0, 1].
+fn clamp01(t) {
+    if (t < 0) { return 0; }
+    if (t > 1) { return 1; }
+    return t;
+}
+fn easeLinear(t) { return clamp01(t); }
+fn easeInQuad(t) { t = clamp01(t); return t * t; }
+fn easeOutQuad(t) { t = clamp01(t); return t * (2 - t); }
+fn easeInOut(t) {
+    t = clamp01(t);
+    if (t < 0.5) { return 2 * t * t; }
+    return 1 - pow(-2 * t + 2, 2) / 2;
+}
+fn easeInCubic(t) { t = clamp01(t); return t * t * t; }
+fn easeOutCubic(t) { t = clamp01(t); return 1 - pow(1 - t, 3); }
+fn easeInOutCubic(t) {
+    t = clamp01(t);
+    if (t < 0.5) { return 4 * t * t * t; }
+    return 1 - pow(-2 * t + 2, 3) / 2;
+}
+fn lerp(a, b, t) { return a + (b - a) * t; }
+fn mapRange(value, inMin, inMax, outMin, outMax) {
+    if (inMin == inMax) { throw "animath.mapRange input range cannot be zero"; }
+    return outMin + (value - inMin) * (outMax - outMin) / (inMax - inMin);
+}
+fn interpolate(a, b, t, easing = nil) {
+    if (easing == nil) { easing = easeLinear; }
+    return lerp(a, b, easing(t));
+}
+fn keyframe(values, t, easing = nil) {
+    if (len(values) == 0) { throw "animath.keyframe needs at least one value"; }
+    if (len(values) == 1) { return values[0]; }
+    t = clamp01(t);
+    let scaled = t * (len(values) - 1);
+    let index = int(scaled);
+    if (index >= len(values) - 1) { return values[len(values) - 1]; }
+    return interpolate(values[index], values[index + 1], scaled - index, easing);
+}
+fn animateTransform(element, transformType, values, duration = nil, repeat = nil) {
+    if (duration == nil) { duration = "2s"; }
+    if (repeat == nil) { repeat = "indefinite"; }
+    let list = "";
+    for (let i in range(0, len(values))) {
+        if (i > 0) { list = list + ";"; }
+        list = list + string(values[i]);
+    }
+    return element + "<animateTransform attributeName=\"transform\" type=\"" + escapeXML(transformType) + "\" values=\"" + escapeXML(list) + "\" dur=\"" + string(duration) + "\" repeatCount=\"" + string(repeat) + "\"/>";
+}
+fn animateMotion(element, pathData, duration = nil, repeat = nil) {
+    if (duration == nil) { duration = "2s"; }
+    if (repeat == nil) { repeat = "indefinite"; }
+    return element + "<animateMotion path=\"" + escapeXML(pathData) + "\" dur=\"" + string(duration) + "\" repeatCount=\"" + string(repeat) + "\"/>";
+}
+fn ellipse(cx, cy, rx, ry, stroke = nil, fill = nil, width = nil) {
+    if (stroke == nil) { stroke = "black"; }
+    if (fill == nil) { fill = "none"; }
+    if (width == nil) { width = 2; }
+    return "<ellipse cx=\"" + string(cx) + "\" cy=\"" + string(cy) + "\" rx=\"" + string(rx) + "\" ry=\"" + string(ry) + "\" stroke=\"" + escapeXML(stroke) + "\" stroke-width=\"" + string(width) + "\" fill=\"" + escapeXML(fill) + "\"/>";
+}
+fn polygon(points, stroke = nil, fill = nil, width = nil) {
+    if (stroke == nil) { stroke = "black"; }
+    if (fill == nil) { fill = "none"; }
+    if (width == nil) { width = 2; }
+    let data = "";
+    for (let p in points) { data = data + string(p[0]) + "," + string(p[1]) + " "; }
+    return "<polygon points=\"" + data.trim() + "\" stroke=\"" + escapeXML(stroke) + "\" stroke-width=\"" + string(width) + "\" fill=\"" + escapeXML(fill) + "\"/>";
+}
+fn path(data, stroke = nil, fill = nil, width = nil) {
+    if (stroke == nil) { stroke = "black"; }
+    if (fill == nil) { fill = "none"; }
+    if (width == nil) { width = 2; }
+    return "<path d=\"" + escapeXML(data) + "\" stroke=\"" + escapeXML(stroke) + "\" stroke-width=\"" + string(width) + "\" fill=\"" + escapeXML(fill) + "\"/>";
+}
+fn group(content, transform = nil) {
+    if (transform == nil) { transform = ""; }
+    let attr = "";
+    if (transform != "") { attr = " transform=\"" + escapeXML(transform) + "\""; }
+    return "<g" + attr + ">" + content + "</g>";
+}
+fn animationDocument(width, height, content, background, title) {
+    return htmlDocument(svg(width, height, content, background), title);
+}
+
+// A reusable scene container. Elements are SVG fragments returned by the
+// primitive helpers above; rendering and file output stay deterministic.
+class Scene {
+    fn init(width, height, background = "white", title = "Animath") {
+        if (width <= 0 || height <= 0) { throw "animath.Scene dimensions must be positive"; }
+        this.width = width;
+        this.height = height;
+        this.background = background;
+        this.title = title;
+        this.elements = [];
+    }
+
+    fn add(element) {
+        this.elements.push(string(element));
+        return this;
+    }
+
+    fn addAll(elements) {
+        for (let element in elements) { this.add(element); }
+        return this;
+    }
+
+    fn clear() {
+        this.elements = [];
+        return this;
+    }
+
+    fn content() {
+        let output = "";
+        for (let element in this.elements) { output = output + element; }
+        return output;
+    }
+
+    fn render() {
+        return svg(this.width, this.height, this.content(), this.background);
+    }
+
+    fn html() {
+        return htmlDocument(this.render(), this.title);
+    }
+
+    fn save(path) {
+        return os.writeText(path, this.render());
+    }
+
+    fn saveHTML(path) {
+        return os.writeText(path, this.html());
+    }
+}
+
+fn createScene(width, height, background = "white", title = "Animath") {
+    return Scene(width, height, background, title);
+}
+
+
+
+// Additional scientific plots. Every function returns SVG markup to compose in a Scene.
+
+fn arrayMinimum(values) {
+    if (len(values) == 0) { throw "expected at least one value"; }
+    let result = values[0];
+    for (let value in values) { if (value < result) { result = value; } }
+    return result;
+}
+fn arrayMaximum(values) {
+    if (len(values) == 0) { throw "expected at least one value"; }
+    let result = values[0];
+    for (let value in values) { if (value > result) { result = value; } }
+    return result;
+}
+
+fn scatterPlot(points, xMin, xMax, yMin, yMax, width, height, color = "#2563eb", radius = 3) {
+    if (xMax == xMin || yMax == yMin) { throw "animath.scatterPlot ranges cannot have zero width"; }
+    let output = "";
+    for (let point in points) {
+        let x = (point[0] - xMin) * width / (xMax - xMin);
+        let y = height - (point[1] - yMin) * height / (yMax - yMin);
+        output = output + circle(x, y, radius, color, color);
+    }
+    return output;
+}
+
+fn parametricPlot(xFunction, yFunction, tMin, tMax, width, height, samples = 200, color = "#7c3aed", strokeWidth = 2) {
+    if (tMax == tMin || samples < 1) { throw "animath.parametricPlot requires a non-zero range and positive samples"; }
+    let points = [];
+    for (let i in range(0, samples + 1)) {
+        let t = tMin + (tMax - tMin) * i / samples;
+        points.push([xFunction(t), yFunction(t)]);
+    }
+    let xs = [];
+    let ys = [];
+    for (let point in points) { xs.push(point[0]); ys.push(point[1]); }
+    let xLow = arrayMinimum(xs); let xHigh = arrayMaximum(xs);
+    let yLow = arrayMinimum(ys); let yHigh = arrayMaximum(ys);
+    if (xHigh == xLow) { xHigh = xLow + 1; }
+    if (yHigh == yLow) { yHigh = yLow + 1; }
+    let mapped = [];
+    for (let point in points) {
+        mapped.push([(point[0] - xLow) * width / (xHigh - xLow), height - (point[1] - yLow) * height / (yHigh - yLow)]);
+    }
+    return polyline(mapped, color, strokeWidth);
+}
+
+fn barChart(labels, values, width, height, color = "#2563eb", labelColor = "#111827") {
+    if (len(labels) != len(values)) { throw "animath.barChart labels and values length mismatch"; }
+    if (len(values) == 0) { return ""; }
+    let maxValue = arrayMaximum(values);
+    if (maxValue <= 0) { maxValue = 1; }
+    let gap = width * 0.04;
+    let barWidth = (width - gap * (len(values) + 1)) / len(values);
+    let output = "";
+    for (let i in range(0, len(values))) {
+        let barHeight = values[i] * height / maxValue;
+        let x = gap + i * (barWidth + gap);
+        let y = height - barHeight;
+        output = output + rectangle(x, y, barWidth, barHeight, color, color);
+        output = output + text(x, height + 18, labels[i], labelColor, 11);
+    }
+    return output;
+}
+
+fn histogram(values, bins, width, height, color = "#0f766e") {
+    if (bins < 1 || int(bins) != bins) { throw "animath.histogram bins must be a positive integer"; }
+    if (len(values) == 0) { return ""; }
+    let low = arrayMinimum(values); let high = arrayMaximum(values);
+    if (low == high) { high = low + 1; }
+    let counts = [];
+    for (let i in range(0, bins)) { counts.push(0); }
+    for (let value in values) {
+        let index = int((value - low) * bins / (high - low));
+        if (index >= bins) { index = bins - 1; }
+        if (index < 0) { index = 0; }
+        counts[index] = counts[index] + 1;
+    }
+    let maxCount = arrayMaximum(counts);
+    if (maxCount < 1) { maxCount = 1; }
+    let barWidth = width / bins;
+    let output = "";
+    for (let i in range(0, bins)) {
+        let barHeight = counts[i] * height / maxCount;
+        output = output + rectangle(i * barWidth, height - barHeight, barWidth - 1, barHeight, color, color);
+    }
+    return output;
+}
+
+fn translate(element, x, y) { return group(element, "translate(" + string(x) + " " + string(y) + ")"); }
+fn rotate(element, degrees, centerX = 0, centerY = 0) {
+    return group(element, "rotate(" + string(degrees) + " " + string(centerX) + " " + string(centerY) + ")");
+}
+fn scaleElement(element, x, y = nil) {
+    if (y == nil) { y = x; }
+    return group(element, "scale(" + string(x) + " " + string(y) + ")");
+}
+
+fn lineChart(labels, series, width, height, color = "#2563eb", strokeWidth = 2) {
+    if (len(labels) != len(series)) { throw "animath.lineChart labels and series length mismatch"; }
+    if (len(series) < 2) { throw "animath.lineChart requires at least two points"; }
+    let low = arrayMinimum(series); let high = arrayMaximum(series);
+    if (high == low) { high = low + 1; }
+    let points = [];
+    for (let i in range(0, len(series))) {
+        let x = i * width / (len(series) - 1);
+        let y = height - (series[i] - low) * height / (high - low);
+        points.push([x, y]);
+    }
+    return polyline(points, color, strokeWidth);
+}

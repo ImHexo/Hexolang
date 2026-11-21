@@ -1,0 +1,13 @@
+import "stdlib/game_3d.hexo" as game3d;
+import "stdlib/simple_game3d.hexo" as simple3d;
+let v = game3d.add(game3d.vec3(1, 2, 3), game3d.vec3(4, 5, 6));
+assert(v[0] == 5 && v[1] == 7 && v[2] == 9);
+assert(game3d.dot(v, v) == 155);
+assert(game3d.length(game3d.vec3(3, 4, 0)) == 5);
+assert(simple3d.distance(game3d.vec3(0, 0, 0), game3d.vec3(0, 0, 1)) == 1);
+assert(game3d.distanceSquared(game3d.vec3(0, 0, 0), game3d.vec3(0, 3, 4)) == 25);
+assert(game3d.hadamard(game3d.vec3(2, 3, 4), game3d.vec3(5, 6, 7))[2] == 28);
+assert(game3d.rotateZ(game3d.vec3(1, 0, 0), 1.5707963267948966)[1] > 0.99);
+assert(game3d.angleBetween(game3d.vec3(1, 0, 0), game3d.vec3(0, 1, 0)) > 1.5);
+assert(game3d.reflect(game3d.vec3(1, -1, 0), game3d.vec3(0, 1, 0))[1] == 1);
+print("3D math helpers OK (rendering needs raylib)");

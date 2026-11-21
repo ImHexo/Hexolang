@@ -1,0 +1,160 @@
+import "stdlib/tabular.hexo" as tabular;
+import "stdlib/json.hexo" as json;
+
+// SQLite connector. Handles must be closed/finalized explicitly.
+let open = sqliteOpen;
+let close = sqliteClose;
+let exec = sqliteExec;
+let query = sqliteQuery;
+let prepare = sqlitePrepare;
+let bindInt = sqliteBindInt;
+let bindFloat = sqliteBindFloat;
+let bindText = sqliteBindText;
+let bindNull = sqliteBindNull;
+let step = sqliteStep;
+let columnCount = sqliteColumnCount;
+let columnName = sqliteColumnName;
+let column = sqliteColumn;
+let columnType = sqliteColumnType;
+let reset = sqliteReset;
+let finalize = sqliteFinalize;
+let changes = sqliteChanges;
+let lastInsertId = sqliteLastInsertId;
+
+fn begin(db) { return exec(db, "BEGIN"); }
+fn commit(db) { return exec(db, "COMMIT"); }
+fn rollback(db) { return exec(db, "ROLLBACK"); }
+fn transaction(db, callback) {
+    begin(db);
+    try {
+        let value = callback();
+        commit(db);
+        return value;
+    } catch (error) {
+        rollback(db);
+        throw error;
+    }
+}
+
+
+let execute = exec;
+let all = query;
+let rows = tabular.rows;
+let columns = tabular.columns;
+
+fn scalar(db, sql) {
+    let result = query(db, sql);
+    let data = rows(result);
+    if (len(data) == 0 || len(data[0]) == 0) { return nil; }
+    return data[0][0];
+}
+
+fn first(db, sql) {
+    let data = rows(query(db, sql));
+    if (len(data) == 0) { return nil; }
+    return data[0];
+}
+
+fn bindBool(statement, index, value) {
+    return bindInt(statement, index, int(bool(value)));
+}
+
+fn withDatabase(path, callback) {
+    let db = open(path);
+    try {
+        let result = callback(db);
+        close(db);
+        return result;
+    } catch (errorValue) {
+        close(db);
+        throw errorValue;
+    }
+}
+
+fn withTransaction(db, callback) { return transaction(db, callback); }
+
+
+// Type-aware prepared-statement helpers.
+fn bindValue(statement, index, value) {
+    if (value == nil) { return bindNull(statement, index); }
+    let kind = typeof(value);
+    if (kind == "bool") { return bindBool(statement, index, value); }
+    if (kind == "int") { return bindInt(statement, index, value); }
+    if (kind == "float") { return bindFloat(statement, index, value); }
+    if (kind == "string") { return bindText(statement, index, value); }
+    throw "sqlite.bindValue supports nil, bool, int, float and string";
+}
+
+fn bindValues(statement, values) {
+    if (typeof(values) != "array") { throw "sqlite.bindValues expects an array"; }
+    for (let i in range(0, len(values))) { bindValue(statement, i + 1, values[i]); }
+    return statement;
+}
+
+fn queryPrepared(db, sql, values = []) {
+    let statement = prepare(db, sql);
+    try {
+        bindValues(statement, values);
+        let names = [];
+        for (let i in range(0, columnCount(statement))) { names.push(columnName(statement, i)); }
+        let data = [names];
+        while (step(statement)) {
+            let row = [];
+            for (let i in range(0, columnCount(statement))) { row.push(column(statement, i)); }
+            data.push(row);
+        }
+        finalize(statement);
+        return tabular.fromRows(data, true);
+    } catch (errorValue) {
+        try { finalize(statement); } catch (ignored) { }
+        throw errorValue;
+    }
+}
+
+fn executePrepared(db, sql, values = []) {
+    let statement = prepare(db, sql);
+    try {
+        bindValues(statement, values);
+        while (step(statement)) { }
+        let changed = changes(db);
+        finalize(statement);
+        return changed;
+    } catch (errorValue) {
+        try { finalize(statement); } catch (ignored) { }
+        throw errorValue;
+    }
+}
+
+// Executes batches atomically. Each item in batches is one positional argument array.
+fn executeMany(db, sql, batches) {
+    if (typeof(batches) != "array") { throw "sqlite.executeMany expects an array of parameter arrays"; }
+    begin(db);
+    try {
+        let total = 0;
+        for (let values in batches) { total = total + executePrepared(db, sql, values); }
+        commit(db);
+        return total;
+    } catch (errorValue) {
+        rollback(db);
+        throw errorValue;
+    }
+}
+
+fn queryObjects(db, sql, values = []) {
+    let result = queryPrepared(db, sql, values);
+    let names = tabular.columns(result);
+    let output = [];
+    for (let row in tabular.rows(result)) {
+        let item = json.object();
+        for (let i in range(0, len(names))) { json.set(item, names[i], row[i]); }
+        output.push(item);
+    }
+    return output;
+}
+
+fn scalarPrepared(db, sql, values = []) {
+    let result = queryPrepared(db, sql, values);
+    let data = tabular.rows(result);
+    if (len(data) == 0 || len(data[0]) == 0) { return nil; }
+    return data[0][0];
+}

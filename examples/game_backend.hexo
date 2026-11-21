@@ -1,0 +1,4 @@
+import "stdlib/game.hexo" as game;
+print("SDL backend: " + game.backend());
+// The following requires an SDL2 development installation and WITH_SDL2=1.
+// game.init("Hexo", 800, 600);

@@ -1,0 +1,191 @@
+{
+  "Import module": {
+    "prefix": "import",
+    "body": "import \"${1:percorso/modulo.hexo}\" as ${2:modulo};",
+    "description": "Importa un modulo e lo rende disponibile tramite un namespace."
+  },
+  "Import selected names": {
+    "prefix": "from",
+    "body": "from \"${1:percorso/modulo.hexo}\" import ${2:Nome};",
+    "description": "Importa funzioni, classi o variabili specifiche da un modulo."
+  },
+  "Function declaration": {
+    "prefix": "fn",
+    "body": [
+      "fn ${1:nome}(${2}) -> ${3:void} {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Dichiara una funzione Hexo."
+  },
+  "Anonymous arrow function": {
+    "prefix": "fna",
+    "body": "fn (${1:parametri}) => ${0:espressione}",
+    "description": "Crea una funzione anonima arrow."
+  },
+  "Typed variable": {
+    "prefix": "let",
+    "body": "let ${1:int} ${2:nome} = ${0:valore}",
+    "description": "Dichiara una variabile tipizzata."
+  },
+  "Constant": {
+    "prefix": "const",
+    "body": "const ${1:NOME} = ${0:valore}",
+    "description": "Dichiara una costante con inizializzatore."
+  },
+  "If / else": {
+    "prefix": "if",
+    "body": [
+      "if (${1:condizione}) {",
+      "\t${2:corpo}",
+      "} else {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Blocco condizionale if/else."
+  },
+  "While loop": {
+    "prefix": "while",
+    "body": [
+      "while (${1:condizione}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Ciclo while."
+  },
+  "For loop": {
+    "prefix": "for",
+    "body": [
+      "for (let ${1:i} = ${2:0}; ${1:i} < ${3:limite}; ${1:i} = ${1:i} + 1) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Ciclo for classico."
+  },
+  "For each": {
+    "prefix": "forin",
+    "body": [
+      "for (let ${1:elemento} in ${2:iterabile}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Itera sugli elementi di un iterabile."
+  },
+  "Class": {
+    "prefix": "class",
+    "body": [
+      "class ${1:Nome}${2: extends Base} {",
+      "\tfn init(${3}) {",
+      "\t\t$0",
+      "\t}",
+      "}"
+    ],
+    "description": "Dichiara una classe con costruttore init."
+  },
+  "Struct": {
+    "prefix": "struct",
+    "body": [
+      "struct ${1:Nome} {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Dichiara uno struct."
+  },
+  "Try / catch / finally": {
+    "prefix": "try",
+    "body": [
+      "try {",
+      "\t${1:corpo}",
+      "} catch (${2:errore}) {",
+      "\t${3:gestioneErrore}",
+      "} finally {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Blocco di gestione delle eccezioni."
+  },
+  "Print": {
+    "prefix": "print",
+    "body": "print(${0:valore})",
+    "description": "Stampa un valore."
+  },
+  "Assert": {
+    "prefix": "assert",
+    "body": "assert(${1:condizione}, ${0:messaggio})",
+    "description": "Verifica una condizione."
+  },
+  "Public class": {
+    "prefix": "classpub",
+    "body": [
+      "class ${1:Nome} {",
+      "\tpublic fn init(${2}) {",
+      "\t\t$0",
+      "\t}",
+      "}"
+    ],
+    "description": "Classe con membri pubblici."
+  },
+  "Private field": {
+    "prefix": "private",
+    "body": "private ${1:int} ${2:nome} = ${0:valore};",
+    "description": "Dichiara un campo privato."
+  },
+  "Private method": {
+    "prefix": "privfn",
+    "body": [
+      "private fn ${1:nome}(${2}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Dichiara un metodo privato."
+  },
+  "Public method": {
+    "prefix": "pubfn",
+    "body": [
+      "public fn ${1:nome}(${2}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Dichiara un metodo pubblico."
+  },
+  "Pointer address": {
+    "prefix": "address",
+    "body": "&${1:variabile}",
+    "description": "Ottiene un puntatore a una variabile, un campo o un elemento di array."
+  },
+  "Pointer dereference": {
+    "prefix": "deref",
+    "body": "*${1:puntatore}",
+    "description": "Dereferenzia un puntatore."
+  },
+  "Hexadecimal integer": {
+    "prefix": "hex",
+    "body": "0x${1:FF0000}",
+    "description": "Valore intero esadecimale."
+  },
+  "Random number": {
+    "prefix": "random",
+    "body": "random()",
+    "description": "Numero pseudo-casuale nell’intervallo [0, 1)."
+  },
+  "Import math module": {
+    "prefix": "importmath",
+    "body": "import \"stdlib/math.hexo\" as math;",
+    "description": "Importa la libreria matematica standard."
+  },
+  "Import OS module": {
+    "prefix": "importos",
+    "body": "import \"stdlib/system/os.hexo\" as os;",
+    "description": "Importa le funzioni standard di sistema e file."
+  },
+  "Read text file": {
+    "prefix": "readtext",
+    "body": "let ${1:string} ${2:contenuto} = os.readText(\"${3:file.txt}\");",
+    "description": "Legge un file di testo tramite system/os."
+  },
+  "Write text file": {
+    "prefix": "writetext",
+    "body": "os.writeText(\"${1:file.txt}\", ${2:contenuto});",
+    "description": "Sovrascrive un file di testo tramite system/os."
+  }
+}

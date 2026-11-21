@@ -1,0 +1,18 @@
+import "stdlib/system/os.hexo" as os;
+let path = "hexo-os-test.tmp";
+assert(os.writeText(path, "first" ) == 5);
+assert(os.fileExists(path));
+assert(os.readText(path) == "first");
+assert(os.appendText(path, " second") == 7);
+assert(os.readText(path) == "first second");
+assert(os.renameFile(path, "hexo-os-renamed.tmp"));
+assert(!os.fileExists(path));
+assert(os.fileExists("hexo-os-renamed.tmp"));
+assert(os.readText("hexo-os-renamed.tmp") == "first second");
+assert(os.removeFile("hexo-os-renamed.tmp"));
+assert(!os.fileExists("hexo-os-renamed.tmp"));
+assert(os.currentDirectory().length > 0);
+assert(os.envGet("PATH") != nil);
+assert(os.envGet("HEXO_TEST_VARIABLE_DOES_NOT_EXIST") == nil);
+assert(os.pathJoin("assets/", "sprite.png") == "assets/sprite.png");
+print("os module OK", os.currentDirectory());

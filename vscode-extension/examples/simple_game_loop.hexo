@@ -1,0 +1,17 @@
+// Requires raylib and a graphical desktop session.
+import "stdlib/simple_game.hexo" as game;
+
+game.initWindow(800, 600, "Hexo simple_game demo");
+game.setTargetFPS(60);
+let position = game.vec2(120, 120);
+while (!game.windowShouldClose()) {
+    let delta = game.frameTime();
+    if (game.isKeyDown(262)) { position = game.add(position, [180 * delta, 0]); }
+    if (game.isKeyDown(263)) { position = game.add(position, [-180 * delta, 0]); }
+    game.beginDrawing();
+    game.clearBackground(game.BLACK);
+    game.drawRectangleV(position, game.vec2(60, 60), game.GREEN);
+    game.drawText("Hexo + raylib", 20, 20, 24, game.WHITE);
+    game.endDrawing();
+}
+game.closeWindow();

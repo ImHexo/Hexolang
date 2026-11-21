@@ -1,0 +1,16 @@
+import "stdlib/animath.hexo" as animath;
+let scene = animath.createScene(320, 180, "#f8fafc", "Animath Scene Test");
+scene.add(animath.grid(320, 180, 40, "#dce3ea"));
+scene.add(animath.axes(320, 180, 160, 90, "#64748b"));
+scene.add(animath.circle(160, 90, 42, "#2563eb", "#bfdbfe"));
+scene.add(animath.text(14, 24, "Hexo Animath", "#0f172a", 16));
+let animated = animath.animate(scene.content(), "opacity", [0.4, 1, 0.4], "2s", "indefinite");
+let animatedScene = animath.createScene(320, 180, "white", "Animated scene");
+animatedScene.add(animated);
+assert(scene.render().contains("<svg"));
+assert(scene.html().contains("<html>"));
+assert(animatedScene.render().contains("<animate"));
+assert(scene.elements.length == 4);
+scene.clear();
+assert(scene.elements.length == 0);
+print("animath Scene API OK");

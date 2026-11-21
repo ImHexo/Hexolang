@@ -1,0 +1,10 @@
+class A {
+    private int secret = 2;
+    public fn get() { return this.secret; }
+}
+class B {
+    public fn fail(a) { return a.secret; }
+}
+let a = A();
+try { B().fail(a); } catch (error) { print("caught"); }
+print(a.get());

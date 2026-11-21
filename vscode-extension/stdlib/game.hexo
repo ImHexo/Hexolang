@@ -1,0 +1,61 @@
+// Low-level SDL2 multimedia API. Build the runtime with WITH_SDL2=1.
+let init = gameInit;
+let quit = gameQuit;
+let pollEvent = gamePollEvent;
+let shouldClose = gameShouldClose;
+let setTitle = gameSetTitle;
+let clear = gameClear;
+let present = gamePresent;
+let drawLine = gameDrawLine;
+let drawRect = gameDrawRect;
+let drawCircle = gameDrawCircle;
+let keyDown = gameKeyDown;
+let mouse = gameMouse;
+let ticks = gameTicks;
+let delay = gameDelay;
+let windowSize = gameWindowSize;
+let backend = gameBackend;
+
+// RGB hex values are accepted as 0xRRGGBB; 0xAARRGGBB is accepted with alpha.
+// Hexo currently has integer arithmetic but no bit-shift operators.
+fn color(r, g, b) { return int(r) * 65536 + int(g) * 256 + int(b); }
+fn rgba(r, g, b, a) { return int(a) * 16777216 + color(r, g, b); }
+
+
+// SDL2-style utility helpers. The low-level backend remains SDL2-specific.
+fn rgb(r, g, b) { return color(r, g, b); }
+fn mouseX() { return mouse()[0]; }
+fn mouseY() { return mouse()[1]; }
+fn leftMouseDown() { return mouse()[2] != 0; }
+fn rightMouseDown() { return mouse()[3] != 0; }
+fn middleMouseDown() { return mouse()[4] != 0; }
+fn pollAllEvents() {
+    let events = [];
+    let event = pollEvent();
+    while (event != nil) {
+        events.push(event);
+        event = pollEvent();
+    }
+    return events;
+}
+
+
+// Structured accessors for the SDL2 event tuple returned by pollEvent().
+fn eventType(event) { return event[0]; }
+fn eventCode(event) { return event[1]; }
+fn eventPosition(event) { return [event[2], event[3]]; }
+fn eventButton(event) { return event[4]; }
+fn isQuitEvent(event) { return event != nil && eventType(event) == "quit"; }
+
+
+// SDL2 texture and game-controller support. BMP is decoded by SDL2 core;
+// PNG/JPEG decoding requires a future SDL_image adapter.
+let loadBMP = gameLoadBMP;
+let drawTexture = gameDrawTexture;
+let destroyTexture = gameDestroyTexture;
+let setFullscreen = gameSetFullscreen;
+let controllerCount = gameControllerCount;
+let controllerOpen = gameControllerOpen;
+let controllerButton = gameControllerButton;
+let controllerAxis = gameControllerAxis;
+let controllerClose = gameControllerClose;

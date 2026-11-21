@@ -1,0 +1,9 @@
+import "stdlib/animath.hexo" as animath;
+let grid = animath.grid(640, 360, 40, "#eeeeee");
+let axes = animath.axes(640, 360, 320, 180, "#333333");
+fn parabola(x) { return x * x / 100; }
+let curve = animath.plot(parabola, -10, 10, 0, 10, 640, 360, 120, "#1769aa");
+let scene = animath.svg(640, 360, grid + axes + curve + animath.circle(320, 180, 6, "red", "red"), "white");
+animath.saveSVG("animath-demo.svg", 640, 360, grid + axes + curve, "white");
+assert(scene.contains("<svg"));
+print("animath OK");

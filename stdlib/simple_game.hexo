@@ -1,0 +1,165 @@
+// High-level Raylib-style 2D facade. Build with WITH_RAYLIB=1.
+let initWindow = simpleGameInit;
+let closeWindow = simpleGameClose;
+let windowShouldClose = simpleGameShouldClose;
+let beginDrawing = simpleGameBegin;
+let endDrawing = simpleGameEnd;
+let clearBackground = simpleGameClear;
+let drawRectangle = simpleGameRect;
+let drawLine = simpleGameLine;
+let drawCircle = simpleGameCircle;
+let drawText = simpleGameText;
+let isKeyDown = simpleGameKeyDown;
+let isKeyPressed = simpleGameKeyPressed;
+let mousePosition = simpleGameMouse;
+let frameTime = simpleGameFrameTime;
+let fps = simpleGameFps;
+let setTargetFPS = simpleGameTargetFps;
+let loadTexture = simpleGameTextureLoad;
+let drawTexture = simpleGameTextureDraw;
+let unloadTexture = simpleGameTextureUnload;
+let setWindowTitle = simpleGameSetTitle;
+let toggleFullscreen = simpleGameFullscreen;
+let backend = simpleGameBackend;
+
+const BLACK = 0x000000;
+const WHITE = 0xffffff;
+const RED = 0xff0000;
+const GREEN = 0x00ff00;
+const BLUE = 0x0000ff;
+const YELLOW = 0xffff00;
+const GRAY = 0x808080;
+
+
+fn colorRGB(r, g, b) { return int(r) * 65536 + int(g) * 256 + int(b); }
+fn colorRGBA(r, g, b, a) { return int(a) * 16777216 + colorRGB(r, g, b); }
+fn drawRectangleV(position, size, color) {
+    return drawRectangle(position[0], position[1], size[0], size[1], color, true);
+}
+fn drawRectangleLines(x, y, width, height, color) {
+    return drawRectangle(x, y, width, height, color, false);
+}
+fn drawLineV(start, finish, color) {
+    return drawLine(start[0], start[1], finish[0], finish[1], color);
+}
+fn drawCircleV(center, radius, color, filled = nil) {
+    if (filled == nil) { filled = true; }
+    return drawCircle(center[0], center[1], radius, color, filled);
+}
+fn drawTextureAt(texture, position, tint = nil) {
+    if (tint == nil) { return drawTexture(texture, position[0], position[1]); }
+    return drawTexture(texture, position[0], position[1], tint);
+}
+fn keyDown(keyCode) { return isKeyDown(keyCode); }
+fn keyPressed(keyCode) { return isKeyPressed(keyCode); }
+
+
+// Common 2D math and collision helpers; these work without a raylib window.
+fn vec2(x, y) { return [x, y]; }
+fn add(a, b) { return [a[0] + b[0], a[1] + b[1]]; }
+fn subtract(a, b) { return [a[0] - b[0], a[1] - b[1]]; }
+fn scale(a, amount) { return [a[0] * amount, a[1] * amount]; }
+fn dot(a, b) { return a[0] * b[0] + a[1] * b[1]; }
+fn length(a) { return sqrt(dot(a, a)); }
+fn normalize(a) {
+    let magnitude = length(a);
+    if (magnitude == 0) { return [0, 0]; }
+    return scale(a, 1 / magnitude);
+}
+fn distance(a, b) { return length(subtract(a, b)); }
+fn lerp(a, b, amount) { return add(a, scale(subtract(b, a), amount)); }
+fn rectContains(rect, point) {
+    return point[0] >= rect[0] && point[1] >= rect[1] &&
+        point[0] <= rect[0] + rect[2] && point[1] <= rect[1] + rect[3];
+}
+fn rectIntersects(a, b) {
+    return a[0] < b[0] + b[2] && a[0] + a[2] > b[0] &&
+        a[1] < b[1] + b[3] && a[1] + a[3] > b[1];
+}
+fn circlesIntersect(a, radiusA, b, radiusB) {
+    let radii = radiusA + radiusB;
+    return dot(subtract(a, b), subtract(a, b)) <= radii * radii;
+}
+
+
+// Additional 2D input, primitive and camera operations from raylib.
+let isMouseButtonDown = simpleGameMouseDown;
+let isMouseButtonPressed = simpleGameMousePressed;
+let mouseWheelMove = simpleGameMouseWheel;
+let mouseDelta = simpleGameMouseDelta;
+let isKeyReleased = simpleGameKeyReleased;
+let screenSize = simpleGameScreenSize;
+let setWindowSize = simpleGameWindowSize;
+let drawTriangle = simpleGameDrawTriangle;
+let drawEllipse = simpleGameDrawEllipse;
+let drawLineEx = simpleGameDrawLineEx;
+let drawRectangleRounded = simpleGameDrawRectRounded;
+let measureText = simpleGameTextWidth;
+let beginMode2D = simpleGameBegin2D;
+let endMode2D = simpleGameEnd2D;
+fn withCamera2D(camera, drawCallback) {
+    beginMode2D(camera.offset[0], camera.offset[1], camera.target[0], camera.target[1], camera.rotation, camera.zoom);
+    try {
+        let result = drawCallback();
+        endMode2D();
+        return result;
+    } catch (errorValue) {
+        endMode2D();
+        throw errorValue;
+    }
+}
+class Camera2D {
+    fn init(offset, target, rotation = 0, zoom = 1) {
+        this.offset = offset; this.target = target; this.rotation = rotation; this.zoom = zoom;
+    }
+}
+
+
+// raylib audio API. Call initAudioDevice before loading any sound/music asset.
+let initAudioDevice = simpleGameInitAudio;
+let closeAudioDevice = simpleGameCloseAudio;
+let audioDeviceReady = simpleGameAudioReady;
+let loadSound = simpleGameLoadSound;
+let playSound = simpleGamePlaySound;
+let stopSound = simpleGameStopSound;
+let unloadSound = simpleGameUnloadSound;
+let setSoundVolume = simpleGameSetSoundVolume;
+let setSoundPitch = simpleGameSetSoundPitch;
+let isSoundPlaying = simpleGameIsSoundPlaying;
+let loadMusicStream = simpleGameLoadMusic;
+let playMusic = simpleGamePlayMusic;
+let updateMusicStream = simpleGameUpdateMusic;
+let pauseMusic = simpleGamePauseMusic;
+let resumeMusic = simpleGameResumeMusic;
+let stopMusic = simpleGameStopMusic;
+let unloadMusicStream = simpleGameUnloadMusic;
+let isMusicPlaying = simpleGameIsMusicPlaying;
+let setMusicVolume = simpleGameSetMusicVolume;
+let musicTimePlayed = simpleGameMusicTimePlayed;
+let musicTimeLength = simpleGameMusicTimeLength;
+
+// Additional audio controls; call updateMusicStream once per frame for streams.
+let pauseSound = simpleGamePauseSound;
+let resumeSound = simpleGameResumeSound;
+let setSoundPan = simpleGameSetSoundPan;
+let setMusicPitch = simpleGameSetMusicPitch;
+let setMusicPan = simpleGameSetMusicPan;
+let seekMusicStream = simpleGameSeekMusicStream;
+
+// Custom fonts, render targets and gamepad input.
+let setMasterVolume = simpleGameSetMasterVolume;
+let getMasterVolume = simpleGameGetMasterVolume;
+let loadFont = simpleGameLoadFont;
+let unloadFont = simpleGameUnloadFont;
+let drawTextEx = simpleGameDrawTextEx;
+let measureTextEx = simpleGameMeasureTextEx;
+let loadRenderTexture = simpleGameLoadRenderTexture;
+let beginTextureMode = simpleGameBeginTextureMode;
+let endTextureMode = simpleGameEndTextureMode;
+let drawRenderTexture = simpleGameDrawRenderTexture;
+let unloadRenderTexture = simpleGameUnloadRenderTexture;
+let isGamepadAvailable = simpleGameIsGamepadAvailable;
+let isGamepadButtonDown = simpleGameIsGamepadButtonDown;
+let isGamepadButtonPressed = simpleGameIsGamepadButtonPressed;
+let getGamepadAxisMovement = simpleGameGetGamepadAxisMovement;
+let getGamepadName = simpleGameGetGamepadName;

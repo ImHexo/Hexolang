@@ -1,0 +1,23 @@
+// Requires raylib and a graphical desktop session.
+import "stdlib/simple_game.hexo" as game;
+import "stdlib/simple_game3d.hexo" as game3d;
+
+game.initWindow(1000, 700, "Hexo simple_game3d demo");
+game.setTargetFPS(60);
+let camera = game3d.Camera3D(
+    game3d.vec3(6, 6, 6),
+    game3d.vec3(0, 1, 0),
+    game3d.vec3(0, 1, 0),
+    45
+);
+while (!game.windowShouldClose()) {
+    game.beginDrawing();
+    game.clearBackground(game.BLACK);
+    game3d.withCamera(camera, fn () {
+        game3d.drawGround(20, 1);
+        game3d.drawCube(game3d.vec3(0, 1, 0), game3d.vec3(2, 2, 2), game.BLUE);
+        game3d.drawSphere(game3d.vec3(3, 1, 0), 1, game.RED);
+    });
+    game.endDrawing();
+}
+game.closeWindow();

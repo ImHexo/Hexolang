@@ -1,0 +1,10 @@
+class Parent {
+    private int token = 8;
+    public fn getToken() { return this.token; }
+}
+class Child extends Parent {
+    public fn peekToken() { return this.token; }
+}
+let child = Child();
+print(child.getToken());
+print(child.peekToken()); // Must fail: private is not protected.

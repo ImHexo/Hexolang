@@ -1,0 +1,12 @@
+import "stdlib/math.hexo" as math;
+print(math.sqrt(81));
+print(math.sin(math.PI / 2.0));
+print(math.atan2(1, 1));
+print(math.log10(100));
+print(math.hypot(3, 4));
+print(math.TAU);
+print(math.toDegrees(math.PI));
+print(math.toRadians(180));
+print(math.clamp(12, 0, 10));
+print(math.lerp(0, 10, 0.25));
+print(math.mapRange(5, 0, 10, 0, 100));

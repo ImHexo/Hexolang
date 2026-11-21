@@ -1,0 +1,233 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Hexo",
+  "scopeName": "source.hexo",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#function-declarations"
+    },
+    {
+      "include": "#class-declarations"
+    },
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#builtin-functions"
+    },
+    {
+      "include": "#types"
+    },
+    {
+      "include": "#constants"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#operators"
+    },
+    {
+      "include": "#punctuation"
+    },
+    {
+      "include": "#function-calls"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.hexo",
+          "begin": "//",
+          "end": "$"
+        },
+        {
+          "name": "comment.block.hexo",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.hexo",
+          "begin": "\"",
+          "end": "\"",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.begin.hexo"
+            }
+          },
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.end.hexo"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#string-escapes"
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.hexo",
+          "begin": "'",
+          "end": "'",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.begin.hexo"
+            }
+          },
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.end.hexo"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#string-escapes"
+            }
+          ]
+        }
+      ]
+    },
+    "string-escapes": {
+      "patterns": [
+        {
+          "name": "constant.character.escape.hexo",
+          "match": "\\\\(?:[\\\\\\\"'nrt0]|x[0-9A-Fa-f]{2}|u[0-9A-Fa-f]{4})"
+        }
+      ]
+    },
+    "function-declarations": {
+      "patterns": [
+        {
+          "name": "meta.function.hexo",
+          "match": "\\b(fn)\\s+(?:((?:int|float|number|string|bool|any|void|function|nil|[A-Za-z_][A-Za-z0-9_]*)\\s+))?([A-Za-z_][A-Za-z0-9_]*)\\s*(?=\\()",
+          "captures": {
+            "1": {
+              "name": "storage.type.function.hexo"
+            },
+            "2": {
+              "name": "storage.type.hexo"
+            },
+            "3": {
+              "name": "entity.name.function.hexo"
+            }
+          }
+        }
+      ]
+    },
+    "class-declarations": {
+      "patterns": [
+        {
+          "match": "\\b(class|struct)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+          "captures": {
+            "1": {
+              "name": "storage.type.hexo"
+            },
+            "2": {
+              "name": "entity.name.type.hexo"
+            }
+          }
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.hexo",
+          "match": "\\b(?:let|const|fn|return|if|else|while|for|in|break|continue|class|struct|extends|super|this|static|public|private|is|try|catch|finally|throw|import|from|as)\\b"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "name": "storage.type.hexo",
+          "match": "\\b(?:int|float|number|string|bool|any|void|function|nil|ptr)\\b"
+        },
+        {
+          "name": "keyword.operator.type.hexo",
+          "match": "\\?(?=\\s*(?:=|\\)|,|\\{|\\[|\\||;))"
+        }
+      ]
+    },
+    "constants": {
+      "patterns": [
+        {
+          "name": "constant.language.boolean.hexo",
+          "match": "\\b(?:true|false)\\b"
+        },
+        {
+          "name": "constant.language.nil.hexo",
+          "match": "\\bnil\\b"
+        },
+        {
+          "name": "constant.other.hexo",
+          "match": "\\b(?:PI|E)\\b"
+        }
+      ]
+    },
+    "builtin-functions": {
+      "patterns": [
+        {
+          "name": "support.function.builtin.hexo",
+          "match": "\\b(?:print|input|len|typeof|int|float|string|bool|range|abs|sqrt|pow|sin|cos|tan|asin|acos|atan|atan2|sinh|cosh|tanh|log|log10|exp|fmod|hypot|floor|ceil|round|min|max|envGet|fileExists|readText|writeText|appendText|removeFile|renameFile|currentDirectory|clock|assert|exit|random|randomInt|seedRandom|randomChoice)\\b(?=\\s*\\()"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.hexo",
+          "match": "\\b(?:0[xX][0-9A-Fa-f]+|0[bB][01]+|[0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)\\b"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.hexo",
+          "match": "(?:=>|->|\\.\\.\\.|==|!=|<=|>=|&&|\\|\\||\\+=|-=|\\*=|/=|%=|=|\\+|-|\\*|/|%|<|>|!|&|\\|)"
+        }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        {
+          "name": "punctuation.separator.hexo",
+          "match": "[,;:]"
+        },
+        {
+          "name": "punctuation.accessor.hexo",
+          "match": "\\."
+        },
+        {
+          "name": "punctuation.section.braces.begin.hexo",
+          "match": "[\\{\\[\\(]"
+        },
+        {
+          "name": "punctuation.section.braces.end.hexo",
+          "match": "[\\}\\]\\)]"
+        }
+      ]
+    },
+    "function-calls": {
+      "patterns": [
+        {
+          "name": "entity.name.function.hexo",
+          "match": "\\b[A-Za-z_][A-Za-z0-9_]*(?=\\s*\\()"
+        }
+      ]
+    }
+  }
+}

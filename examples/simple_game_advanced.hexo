@@ -1,0 +1,38 @@
+// Run only after building Hexo with raylib enabled (WITH_RAYLIB=1).
+import "stdlib/simple_game.hexo" as game;
+
+game.initWindow(900, 600, "Hexo simple_game advanced");
+game.setTargetFPS(60);
+game.initAudioDevice();
+game.setMasterVolume(0.65);
+
+let target = game.loadRenderTexture(320, 180);
+let click = game.loadSound("examples/assets/beep.wav");
+game.setSoundPan(click, 0);
+
+while (!game.windowShouldClose()) {
+    if (game.isKeyPressed(32)) {
+        game.playSound(click);
+    }
+    if (game.isGamepadAvailable(0) && game.isGamepadButtonPressed(0, 7)) {
+        game.playSound(click);
+    }
+
+    game.beginTextureMode(target);
+    game.clearBackground(0x172033);
+    game.drawCircle(160, 90, 42, 0x45d483);
+    game.drawText("Rendered off-screen", 78, 150, 12, 0xffffff);
+    game.endTextureMode();
+
+    game.beginDrawing();
+    game.clearBackground(0x0b1020);
+    game.drawRenderTexture(target, 290, 180);
+    game.drawText("SPACE: play sound | PAD: gamepad button 7", 190, 410, 18, 0xffffff);
+    game.drawText("RenderTexture + Sound + Gamepad + raylib", 230, 450, 16, 0x9fb3c8);
+    game.endDrawing();
+}
+
+game.unloadSound(click);
+game.unloadRenderTexture(target);
+game.closeAudioDevice();
+game.closeWindow();

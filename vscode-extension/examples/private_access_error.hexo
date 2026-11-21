@@ -1,0 +1,6 @@
+class Vault {
+    private int secret = 7;
+    public fn reveal() { return this.secret; }
+}
+let vault = Vault();
+print(vault.secret); // Expected runtime error: Member 'secret' is private.

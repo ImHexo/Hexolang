@@ -1,0 +1,15 @@
+import "stdlib/tabular.hexo" as tabular;
+let parsed = tabular.parseCSV("name,score,note\r\nAda,9,\"hello, world\"\r\nLinus,8,\"line one\nline two\"\r\n");
+let table = tabular.fromRows(parsed, true);
+let dimensions = tabular.shape(table);
+assert(dimensions[0] == 2);
+assert(dimensions[1] == 3);
+assert(tabular.column(table, "name")[0] == "Ada");
+let sorted = tabular.sortBy(table, "score", false);
+assert(tabular.column(sorted, "name")[0] == "Ada");
+let encoded = tabular.toCSV(table);
+assert(encoded.contains("hello, world"));
+tabular.writeCSV("hexo-tabular-test.csv", table);
+let loaded = tabular.readCSV("hexo-tabular-test.csv", true);
+assert(tabular.shape(loaded)[0] == 2);
+print("tabular OK");

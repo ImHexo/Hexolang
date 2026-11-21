@@ -1,0 +1,56 @@
+// Hexo pseudo-random module. Not cryptographically secure.
+let random = random;
+let randomInt = randomInt;
+let seed = seedRandom;
+let choice = randomChoice;
+
+fn uniform(minimum, maximum) {
+    if (maximum < minimum) { throw "random.uniform maximum must be >= minimum"; }
+    return minimum + random() * (maximum - minimum);
+}
+fn boolean() { return randomInt(0, 1) == 1; }
+fn chance(probability) {
+    if (probability < 0 || probability > 1) { throw "random.chance probability must be in [0, 1]"; }
+    return random() < probability;
+}
+fn shuffle(values) {
+    let result = values.slice(0);
+    for (let i in range(len(result) - 1, 0, -1)) {
+        let j = randomInt(0, i);
+        let temporary = result[i];
+        result[i] = result[j];
+        result[j] = temporary;
+    }
+    return result;
+}
+fn sample(values, count) {
+    let n = int(count);
+    if (n < 0 || n > len(values)) { throw "random.sample count is out of range"; }
+    return shuffle(values).slice(0, n);
+}
+fn normal(mean, standardDeviation) {
+    if (mean == nil) { mean = 0; }
+    if (standardDeviation == nil) { standardDeviation = 1; }
+    if (standardDeviation < 0) { throw "random.normal standard deviation must be >= 0"; }
+    let u1 = random();
+    if (u1 <= 0) { u1 = 0.000000001; }
+    let u2 = random();
+    let z = sqrt(-2 * log(u1)) * cos(6.283185307179586 * u2);
+    return mean + z * standardDeviation;
+}
+fn weightedChoice(values, weights) {
+    if (len(values) == 0 || len(values) != len(weights)) { throw "random.weightedChoice expects equally sized non-empty arrays"; }
+    let total = 0;
+    for (let weight in weights) {
+        if (weight < 0) { throw "random.weightedChoice weights must be non-negative"; }
+        total = total + weight;
+    }
+    if (total <= 0) { throw "random.weightedChoice requires a positive total weight"; }
+    let target = random() * total;
+    let accumulated = 0;
+    for (let i in range(0, len(values))) {
+        accumulated = accumulated + weights[i];
+        if (target < accumulated) { return values[i]; }
+    }
+    return values[len(values) - 1];
+}

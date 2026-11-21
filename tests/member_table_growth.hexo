@@ -1,0 +1,21 @@
+class Large {
+    public int a = 1;
+    public int b = 2;
+    public int c = 3;
+    public int d = 4;
+    public int e = 5;
+    private int secret = 77;
+    public fn sum() { return this.a + this.b + this.c + this.d + this.e; }
+    public fn reveal() { return this.secret; }
+    public fn one() { return 1; }
+    public fn two() { return 2; }
+    public fn three() { return 3; }
+    public fn four() { return 4; }
+    public fn five() { return 5; }
+    public fn six() { return 6; }
+}
+let item = Large();
+assert(item.sum() == 15);
+assert(item.reveal() == 77);
+assert(item.six() == 6);
+print("member table growth OK");

@@ -1,0 +1,98 @@
+// JSON support. Objects are managed with json.object/get/set/keys; arrays are Hexo arrays.
+import "stdlib/system/os.hexo" as os;
+let parse = jsonParse;
+let stringify = jsonStringify;
+let object = jsonObject;
+let array = jsonArray;
+let get = jsonGet;
+let set = jsonSet;
+let has = jsonHas;
+let keys = jsonKeys;
+let isObject = jsonIsObject;
+let remove = jsonRemove;
+
+fn clone(value) { return parse(stringify(value)); }
+fn parseFile(path) {
+    return parse(os.readText(path));
+}
+fn writeFile(path, value) {
+    return os.writeText(path, stringify(value));
+}
+
+
+fn entries(value) {
+    let result = [];
+    for (let key in keys(value)) { result.push([key, get(value, key)]); }
+    return result;
+}
+
+fn fromPairs(pairs) {
+    let result = object();
+    for (let pair in pairs) {
+        if (len(pair) != 2) { throw "json.fromPairs expects [key, value] pairs"; }
+        set(result, string(pair[0]), pair[1]);
+    }
+    return result;
+}
+
+fn getString(value, key, fallback = nil) {
+    let item = get(value, key, fallback);
+    if (item == nil) { return nil; }
+    if (typeof(item) != "string") { throw "json value is not a string"; }
+    return item;
+}
+
+fn getNumber(value, key, fallback = nil) {
+    let item = get(value, key, fallback);
+    if (item == nil) { return nil; }
+    let kind = typeof(item);
+    if (kind != "int" && kind != "float") { throw "json value is not numeric"; }
+    return item;
+}
+
+fn getBool(value, key, fallback = nil) {
+    let item = get(value, key, fallback);
+    if (item == nil) { return nil; }
+    if (typeof(item) != "bool") { throw "json value is not boolean"; }
+    return item;
+}
+
+fn merge(target, source) {
+    for (let pair in entries(source)) { set(target, pair[0], pair[1]); }
+    return target;
+}
+
+fn stringifyPretty(value, indent = nil) {
+    // Hexo's compact serializer is RFC 8259 compliant; pretty-printing is a
+    // presentation helper built on the same parsed value tree.
+    if (indent == nil) { indent = 2; }
+    let compact = stringify(value);
+    if (indent <= 0) { return compact; }
+    let output = "";
+    let depth = 0;
+    let quoted = false;
+    let escaped = false;
+    for (let i in range(0, len(compact))) {
+        let c = compact.substring(i, i + 1);
+        if (quoted) {
+            output = output + c;
+            if (escaped) { escaped = false; }
+            else if (c == "\\") { escaped = true; }
+            else if (c == "\"") { quoted = false; }
+        } else if (c == "\"") { quoted = true; output = output + c; }
+        else if (c == "{" || c == "[") {
+            output = output + c + "\n";
+            depth = depth + 1;
+            output = output + " ".repeat(depth * indent);
+        } else if (c == "}" || c == "]") {
+            depth = depth - 1;
+            if (i > 0 && compact.substring(i - 1, i) != "{" && compact.substring(i - 1, i) != "[") {
+                output = output + "\n" + " ".repeat(depth * indent);
+            }
+            output = output + c;
+        } else if (c == ",") { output = output + ",\n" + " ".repeat(depth * indent); }
+        else if (c == ":") { output = output + ": "; }
+        else { output = output + c; }
+    }
+    return output;
+}

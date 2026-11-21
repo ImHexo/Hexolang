@@ -1,0 +1,14 @@
+import "stdlib/json.hexo" as json;
+let data = json.parse("{\"name\":\"Hexo\",\"version\":0.5,\"enabled\":true,\"items\":[1,2,3],\"unicode\":\"\\uD83D\\uDE80\"}");
+assert(json.isObject(data));
+assert(json.get(data, "name") == "Hexo");
+assert(json.get(data, "enabled") == true);
+assert(json.get(data, "items")[0] == 1);
+json.set(data, "major", 5);
+assert(json.has(data, "major"));
+let encoded = json.stringify(data);
+let clone = json.parse(encoded);
+assert(json.get(clone, "major") == 5);
+assert(json.remove(clone, "major"));
+print(encoded);
+print("JSON OK");

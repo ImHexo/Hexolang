@@ -1,0 +1,9 @@
+import "stdlib/json.hexo" as json;
+let value = json.parse("{\"name\":\"Hexo\",\"count\":7,\"enabled\":true}");
+assert(json.getString(value, "name") == "Hexo");
+assert(json.getNumber(value, "count") == 7);
+assert(json.getBool(value, "enabled") == true);
+json.merge(value, json.fromPairs([["version", 0.5]]));
+assert(len(json.entries(value)) == 4);
+assert(json.stringifyPretty(value).contains("\n"));
+print("json extended OK");

@@ -1,0 +1,4 @@
+import "stdlib/simple_game.hexo" as game;
+print("2D backend: " + game.backend());
+// The following requires raylib development files and WITH_RAYLIB=1.
+// game.initWindow(800, 600, "Hexo");

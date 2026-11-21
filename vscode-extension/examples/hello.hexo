@@ -1,0 +1,28 @@
+// Esempio: file dimostrativo per Hexo Language Support.
+
+fn greet(name: string) -> string {
+    return "Ciao, " + name
+}
+
+const PI_VALUE = PI
+let int count = 3
+let names = ["Ada", "Grace", "Linus"]
+
+print(greet("Hexo"))
+print("Elementi:", names.length)
+names.push("Margaret")
+
+for (let name in names) {
+    print(name.upper())
+}
+
+let squares = range(1, 6).map(fn (n) => n * n)
+print(squares.join(", "))
+
+try {
+    assert(count > 0, "count deve essere positivo")
+} catch (error) {
+    print("Errore:", error)
+} finally {
+    print("Completato")
+}

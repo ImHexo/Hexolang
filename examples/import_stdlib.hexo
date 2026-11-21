@@ -1,0 +1,8 @@
+import "stdlib/math.hexo" as math;
+from "stdlib/random.hexo" import seed, randomInt, choice;
+
+seed(1234);
+print(math.sqrt(81));
+print(math.PI);
+print(randomInt(1, 6));
+print(choice(["red", "green", "blue"]));

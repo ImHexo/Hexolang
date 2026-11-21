@@ -1,0 +1,16 @@
+import "stdlib/sqlite.hexo" as sqlite;
+let db = sqlite.open(":memory:");
+sqlite.exec(db, "CREATE TABLE users(id INTEGER PRIMARY KEY, name TEXT, score REAL)");
+sqlite.exec(db, "INSERT INTO users(name, score) VALUES ('Ada', 9.5), ('Linus', 8.0)");
+let result = sqlite.query(db, "SELECT id, name, score FROM users ORDER BY id");
+assert(result[2].length == 2);
+assert(result[2][0][1] == "Ada");
+let stmt = sqlite.prepare(db, "INSERT INTO users(name, score) VALUES (?, ?)");
+sqlite.bindText(stmt, 1, "Grace");
+sqlite.bindFloat(stmt, 2, 10.0);
+assert(sqlite.step(stmt) == false);
+sqlite.finalize(stmt);
+assert(sqlite.lastInsertId(db) == 3);
+assert(sqlite.changes(db) == 1);
+sqlite.close(db);
+print("sqlite OK");

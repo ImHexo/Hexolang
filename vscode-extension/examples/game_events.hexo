@@ -1,0 +1,9 @@
+import "stdlib/game.hexo" as game;
+let event = ["mouseMove", 0, 120, 80, 1];
+assert(game.eventType(event) == "mouseMove");
+assert(game.eventCode(event) == 0);
+assert(game.eventPosition(event)[0] == 120);
+assert(game.eventPosition(event)[1] == 80);
+assert(game.eventButton(event) == 1);
+assert(game.isQuitEvent(["quit", 0, 0, 0, 0]));
+print("SDL event helpers OK");

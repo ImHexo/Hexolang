@@ -1,0 +1,15 @@
+import "stdlib/system/os.hexo" as os;
+let folder = "hexo-os-extended-tmp";
+assert(os.createDirectory(folder));
+assert(os.isDirectory(folder));
+os.writeText(folder + "/sample.txt", "Hexo OS extended");
+assert(os.fileSize(folder + "/sample.txt") == 16);
+assert(os.listDirectory(folder).contains("sample.txt"));
+assert(os.envSet("HEXO_OS_TEST", "configured"));
+assert(os.envGet("HEXO_OS_TEST") == "configured");
+assert(os.envUnset("HEXO_OS_TEST"));
+assert(os.processId() > 0);
+os.sleepMs(1);
+assert(os.removeFile(folder + "/sample.txt"));
+assert(os.removeDirectory(folder));
+print("extended OS OK");

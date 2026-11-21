@@ -1,0 +1,17 @@
+// Requires an SDL2 development package and a graphical desktop session.
+import "stdlib/game.hexo" as game;
+
+assert(game.backend() == "SDL2");
+game.init("Hexo SDL2 demo", 800, 600);
+let running = true;
+while (running && !game.shouldClose()) {
+    for (let event in game.pollAllEvents()) {
+        if (game.isQuitEvent(event)) { running = false; }
+    }
+    game.clear(0x182030);
+    game.drawRect(80, 80, 180, 100, 0x2878d0, true);
+    game.drawCircle(400, 250, 48, 0xffc040, true);
+    game.drawLine(0, 0, 800, 600, 0xffffff);
+    game.present();
+}
+game.quit();

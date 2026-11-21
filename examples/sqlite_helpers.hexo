@@ -1,0 +1,39 @@
+import "stdlib/tabular.hexo" as tabular;
+import "stdlib/json.hexo" as json;
+import "stdlib/sqlite.hexo" as sqlite;
+
+let count = sqlite.withDatabase(":memory:", fn (db) {
+    sqlite.exec(db, "CREATE TABLE flags(value INTEGER)");
+    let statement = sqlite.prepare(db, "INSERT INTO flags(value) VALUES (?)");
+    sqlite.bindBool(statement, 1, true);
+    assert(sqlite.step(statement) == false);
+    sqlite.finalize(statement);
+    return sqlite.scalar(db, "SELECT COUNT(*) FROM flags");
+});
+assert(count == 1);
+
+let db = sqlite.open(":memory:");
+sqlite.exec(db, "CREATE TABLE counters(value INTEGER)");
+sqlite.withTransaction(db, fn () {
+    sqlite.exec(db, "INSERT INTO counters(value) VALUES (10)");
+    sqlite.exec(db, "INSERT INTO counters(value) VALUES (20)");
+    return nil;
+});
+assert(sqlite.scalar(db, "SELECT SUM(value) FROM counters") == 30);
+assert(sqlite.first(db, "SELECT value FROM counters ORDER BY value")[0] == 10);
+sqlite.close(db);
+print("sqlite helpers OK");
+
+// Parameterized query and batch helpers.
+let db2 = sqlite.open(":memory:");
+sqlite.exec(db2, "CREATE TABLE metrics(name TEXT, value REAL, active INTEGER)");
+assert(sqlite.executeMany(db2, "INSERT INTO metrics VALUES (?, ?, ?)", [
+    ["cpu", 0.75, true], ["memory", 0.5, false], ["disk", 0.9, true]
+]) == 3);
+assert(sqlite.scalarPrepared(db2, "SELECT COUNT(*) FROM metrics WHERE active = ?", [true]) == 2);
+let metricRows = sqlite.queryPrepared(db2, "SELECT name, value FROM metrics WHERE value >= ? ORDER BY value", [0.7]);
+assert(tabular.rowCount(metricRows) == 2);
+let metricObjects = sqlite.queryObjects(db2, "SELECT name, active FROM metrics ORDER BY name");
+assert(json.get(metricObjects[0], "name") == "cpu");
+sqlite.close(db2);
+print("sqlite prepared helpers OK");

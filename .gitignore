@@ -1,0 +1,10 @@
+hexo
+*.o
+*.vsix
+hexo-os-test.tmp
+hexo-os-renamed.tmp
+
+animath-advanced-demo.svg
+
+Archivio.zip
+.DS_Store

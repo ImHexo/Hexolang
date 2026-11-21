@@ -1,0 +1,92 @@
+// Hexo standard math module (0.5.0).
+const PI = PI;
+const E = E;
+const TAU = PI * 2.0;
+const DEG_TO_RAD = PI / 180.0;
+const RAD_TO_DEG = 180.0 / PI;
+let abs = abs;
+let sqrt = sqrt;
+let pow = pow;
+let floor = floor;
+let ceil = ceil;
+let round = round;
+let min = min;
+let max = max;
+let sin = sin;
+let cos = cos;
+let tan = tan;
+let asin = asin;
+let acos = acos;
+let atan = atan;
+let atan2 = atan2;
+let sinh = sinh;
+let cosh = cosh;
+let tanh = tanh;
+let log = log;
+let log10 = log10;
+let exp = exp;
+let fmod = fmod;
+let hypot = hypot;
+
+fn toRadians(degrees) { return degrees * DEG_TO_RAD; }
+fn toDegrees(radians) { return radians * RAD_TO_DEG; }
+fn clamp(value, minimum, maximum) {
+    return min(maximum, max(minimum, value));
+}
+fn lerp(a, b, amount) { return a + (b - a) * amount; }
+fn mapRange(value, inMin, inMax, outMin, outMax) {
+    if (inMax == inMin) {
+        throw "mapRange input range cannot be zero";
+    }
+    return outMin + (value - inMin) * (outMax - outMin) / (inMax - inMin);
+}
+
+// Common numeric helpers.
+fn sign(value) {
+    if (value > 0) { return 1; }
+    if (value < 0) { return -1; }
+    return 0;
+}
+fn trunc(value) {
+    if (value < 0) { return ceil(value); }
+    return floor(value);
+}
+fn isEven(value) { return int(value) % 2 == 0; }
+fn isOdd(value) { return !isEven(value); }
+fn factorial(value) {
+    let n = int(value);
+    if (n < 0 || n > 20) { throw "factorial expects an integer from 0 to 20"; }
+    let result = 1;
+    for (let i in range(2, n + 1)) { result = result * i; }
+    return result;
+}
+fn gcd(a, b) {
+    let x = abs(int(a));
+    let y = abs(int(b));
+    while (y != 0) {
+        let remainder = x % y;
+        x = y;
+        y = remainder;
+    }
+    return x;
+}
+fn lcm(a, b) {
+    if (a == 0 || b == 0) { return 0; }
+    return abs(int(a) / gcd(a, b) * int(b));
+}
+fn distance2D(x1, y1, x2, y2) { return hypot(x2 - x1, y2 - y1); }
+fn distance3D(x1, y1, z1, x2, y2, z2) {
+    return hypot(hypot(x2 - x1, y2 - y1), z2 - z1);
+}
+fn smoothstep(edge0, edge1, value) {
+    if (edge0 == edge1) { throw "smoothstep edges cannot be equal"; }
+    let t = clamp((value - edge0) / (edge1 - edge0), 0, 1);
+    return t * t * (3 - 2 * t);
+}
+fn wrap(value, minimum, maximum) {
+    let width = maximum - minimum;
+    if (width <= 0) { throw "wrap maximum must be greater than minimum"; }
+    let result = fmod(value - minimum, width);
+    if (result < 0) { result = result + width; }
+    return minimum + result;
+}

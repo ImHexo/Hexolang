@@ -1,0 +1,16 @@
+import "stdlib/tabular.hexo" as tabular;
+import "stdlib/json.hexo" as json;
+let table = tabular.fromRows([["team", "score"], ["red", 1], ["blue", 3], ["red", 5], ["blue", nil]], true);
+assert(tabular.sum(table, "score") == 9.0);
+assert(tabular.mean(table, "score") == 3.0);
+assert(tabular.min(table, "score") == 1.0);
+assert(tabular.max(table, "score") == 5.0);
+assert(tabular.shape(tabular.dropMissing(table, "score"))[0] == 3);
+assert(tabular.shape(tabular.fillMissing(table, "score", 0))[0] == 4);
+assert(tabular.shape(tabular.groupByCount(table, "team"))[0] == 2);
+let doubled = tabular.mapColumn(table, "score", fn (value) { return value == nil ? nil : value * 2; });
+assert(tabular.column(doubled, "score")[0] == 2);
+let objects = tabular.toObjects(table);
+assert(json.get(objects[0], "team") == "red");
+assert(tabular.shape(tabular.fromObjects(objects))[0] == 4);
+print("tabular analytics OK");

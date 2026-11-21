@@ -1,0 +1,7 @@
+class Vault {
+    private static int key = 19;
+    private static fn readKey() { return Vault.key; }
+    public static fn reveal() { return Vault.readKey(); }
+}
+assert(Vault.reveal() == 19);
+print(Vault.key); // Must fail outside Vault.

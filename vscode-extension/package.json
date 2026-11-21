@@ -1,0 +1,87 @@
+{
+  "name": "hexo-language-support",
+  "displayName": "Hexo Language Support",
+  "description": "Syntax highlighting, pointers, visibility, standard-library IntelliSense and module navigation for Hexo 0.5.3.",
+  "version": "0.5.3",
+  "publisher": "imhexo",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "3d",
+    "animath",
+    "audio",
+    "csv",
+    "hexadecimal",
+    "hexo",
+    "hexo-imports",
+    "hexoweb",
+    "http",
+    "intellisense",
+    "json",
+    "language",
+    "mariadb",
+    "models",
+    "module-imports",
+    "mysql",
+    "pointers",
+    "private",
+    "public",
+    "random",
+    "raylib",
+    "sdl2",
+    "sqlite",
+    "standard-library",
+    "syntax",
+    "tabular"
+  ],
+  "main": "./extension.js",
+  "activationEvents": [
+    "onLanguage:hexo"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "hexo",
+        "aliases": [
+          "Hexo",
+          "hexo"
+        ],
+        "extensions": [
+          ".hexo"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "hexo",
+        "scopeName": "source.hexo",
+        "path": "./syntaxes/hexo.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "hexo",
+        "path": "./snippets/hexo.json"
+      }
+    ],
+    "configurationDefaults": {
+      "[hexo]": {
+        "editor.insertSpaces": true,
+        "editor.tabSize": 4,
+        "editor.autoClosingBrackets": "always",
+        "editor.formatOnPaste": false
+      }
+    }
+  },
+  "scripts": {
+    "check": "node --check extension.js && node --check language-data.js && node --check symbol-index.js && node --test",
+    "test": "node --test",
+    "package": "npx --yes @vscode/vsce package"
+  }
+}

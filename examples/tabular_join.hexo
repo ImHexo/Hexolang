@@ -1,0 +1,17 @@
+import "stdlib/tabular.hexo" as table;
+let people = table.fromRows([["id", "name"], [1, "Ada"], [2, "Grace"], [3, "Linus"]], true);
+let scores = table.fromRows([["id", "score"], [1, 10], [3, 9], [4, 8]], true);
+let inner = table.join(people, scores, "id", "id");
+assert(table.shape(inner)[0] == 2);
+assert(table.columns(inner)[2] == "right_id");
+assert(inner[2][0][1] == "Ada");
+let left = table.join(people, scores, "id", "id", "left");
+assert(table.shape(left)[0] == 3);
+assert(left[2][1][3] == nil);
+let full = table.join(people, scores, "id", "id", "full");
+assert(table.shape(full)[0] == 4);
+let extended = table.addColumn(people, "active", [true, false, true]);
+assert(table.column(extended, "active")[1] == false);
+assert(table.columns(table.dropColumn(extended, "active")).indexOf("active") < 0);
+assert(table.columns(table.renameColumn(people, "name", "displayName"))[1] == "displayName");
+print("tabular joins and mutation OK");

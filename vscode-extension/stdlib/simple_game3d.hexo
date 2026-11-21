@@ -1,0 +1,54 @@
+// Beginner-friendly 3D facade. Uses the raylib GPU backend via game_3d.
+import "stdlib/game_3d.hexo" as low;
+
+let beginCamera = low.beginCamera;
+let endCamera = low.endCamera;
+let drawCube = low.drawCube;
+let drawSphere = low.drawSphere;
+let drawGrid = low.drawGrid;
+let vec3 = low.vec3;
+let add = low.add;
+let subtract = low.subtract;
+let scale = low.scale;
+let dot = low.dot;
+let cross = low.cross;
+let length = low.length;
+let normalize = low.normalize;
+let distance = low.distance;
+let lerp = low.lerp;
+let Camera3D = low.Camera3D;
+
+fn drawGround(size, spacing = nil) { return drawGrid(size, spacing); }
+fn withCamera(camera, drawCallback) {
+    camera.begin();
+    try {
+        let value = drawCallback();
+        camera.end();
+        return value;
+    } catch (errorValue) {
+        camera.end();
+        throw errorValue;
+    }
+}
+
+let distanceSquared = low.distanceSquared;
+let hadamard = low.hadamard;
+let rotateX = low.rotateX;
+let rotateY = low.rotateY;
+let rotateZ = low.rotateZ;
+let angleBetween = low.angleBetween;
+let project = low.project;
+let reflect = low.reflect;
+
+let drawPlane = low.drawPlane;
+let drawCubeWires = low.drawCubeWires;
+let drawSphereWires = low.drawSphereWires;
+let drawCylinder = low.drawCylinder;
+
+let loadModel = low.loadModel;
+let drawModel = low.drawModel;
+let unloadModel = low.unloadModel;
+
+let drawModelEx = low.drawModelEx;
+let drawModelWires = low.drawModelWires;
+let drawModelWiresEx = low.drawModelWiresEx;

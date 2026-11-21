@@ -1,0 +1,11 @@
+import "stdlib/hexoweb.hexo" as web;
+fn handler(method, path, query, headers, body) {
+    if (path == "/") {
+        return web.html("<!doctype html><html><body><h1>Hello from Hexo</h1><p>" + web.escapeHTML(method) + "</p></body></html>", 200);
+    }
+    if (path == "/echo" && method == "POST") { return web.text(body, 200); }
+    return web.notFound("route not found");
+}
+// Pass 1 to serve one request for smoke tests. Use 0 for a long-running server.
+print("Listening on http://127.0.0.1:18087");
+web.serve(18087, handler, 2);

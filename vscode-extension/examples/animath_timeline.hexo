@@ -1,0 +1,8 @@
+import "stdlib/animath.hexo" as animath;
+assert(animath.easeInOut(0.5) == 0.5);
+assert(animath.keyframe([0, 10], 0.5) == 5);
+assert(animath.keyframe([0, 10], 0.5, animath.easeInQuad) == 2.5);
+let content = animath.group(animath.circle(50, 50, 10, "red", "red"), "translate(10 10)");
+content = animath.animateTransform(content, "rotate", ["0 50 50", "360 50 50"], "3s", "indefinite");
+assert(content.contains("animateTransform"));
+print("animath timeline OK");

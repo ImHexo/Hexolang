@@ -1,0 +1,18 @@
+import "stdlib/animath.hexo" as animath;
+import "stdlib/math.hexo" as math;
+import "stdlib/system/os.hexo" as os;
+
+let scene = animath.createScene(640, 420, "#ffffff", "Animath Advanced Charts");
+scene.add(animath.grid(640, 420, 40, "#e5e7eb"));
+scene.add(animath.scatterPlot([[0, 0], [1, 1], [2, 4], [3, 9]], 0, 3, 0, 9, 260, 160, "#2563eb", 4));
+scene.add(animath.translate(animath.barChart(["A", "B", "C"], [4, 8, 5], 260, 120, "#0f766e"), 320, 20));
+scene.add(animath.translate(animath.histogram([1, 1, 2, 2, 2, 3, 4, 5, 5], 5, 260, 100), 20, 260));
+scene.add(animath.translate(animath.parametricPlot(fn (t) { return math.cos(t); }, fn (t) { return math.sin(t); }, 0, math.TAU, 180, 120, 120), 340, 260));
+let output = scene.render();
+assert(output.contains("<svg"));
+assert(output.contains("<polyline"));
+assert(output.contains("<rect"));
+assert(output.contains("<circle"));
+assert(animath.rotate(animath.circle(5, 5, 2, "red", "red"), 45).contains("rotate(45"));
+os.writeText("animath-advanced-demo.svg", output);
+print("advanced animath OK");

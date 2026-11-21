@@ -1,0 +1,13 @@
+fn float calculateArea(float width, float height) {
+    return width * height;
+}
+
+class Rectangle {
+    static fn float unit() {
+        return 1.0;
+    }
+
+    fn float area() {
+        return 0.0;
+    }
+}

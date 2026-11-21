@@ -1,0 +1,30 @@
+// Basic cross-platform operating-system helpers backed by Hexo native functions.
+// File operations are synchronous and resolve relative paths from process cwd.
+let envGet = envGet;
+let fileExists = fileExists;
+let readText = readText;
+let writeText = writeText;
+let appendText = appendText;
+let removeFile = removeFile;
+let renameFile = renameFile;
+let currentDirectory = currentDirectory;
+
+fn pathJoin(directory, name) {
+    if (directory.length == 0) { return name; }
+    if (directory.substring(directory.length - 1) == "/") {
+        return directory + name;
+    }
+    return directory + "/" + name;
+}
+
+
+// Additional filesystem and process helpers.
+let fileSize = osFileSize;
+let isDirectory = osIsDirectory;
+let createDirectory = osCreateDirectory;
+let removeDirectory = osRemoveDirectory;
+let listDirectory = osListDirectory;
+let envSet = osEnvSet;
+let envUnset = osEnvUnset;
+let sleepMs = osSleepMs;
+let processId = osProcessId;

@@ -1,0 +1,37 @@
+import "stdlib/tabular.hexo" as tabular;
+
+let sales = tabular.fromRows([
+    ["region", "quarter", "revenue", "units"],
+    ["north", "Q1", 10, 2], ["north", "Q2", 20, 3],
+    ["south", "Q1", 15, 1], ["south", "Q2", 5, 4],
+    ["north", "Q1", 7, 1]
+], true);
+
+let grouped = tabular.groupByAggregate(sales, "region", [
+    ["revenue_total", "revenue", "sum"],
+    ["revenue_mean", "revenue", "mean"],
+    ["sale_count", nil, "countAll"],
+    ["unit_count", "units", "count"]
+]);
+assert(tabular.rowCount(grouped) == 2);
+assert(tabular.rows(grouped)[0][1] == 37.0);
+assert(tabular.rows(grouped)[0][3] == 3);
+
+let wide = tabular.pivot(sales, "region", "quarter", "revenue", "sum");
+assert(tabular.rowCount(wide) == 2);
+assert(tabular.rows(wide)[0][1] == 17.0);
+assert(tabular.rows(wide)[0][2] == 20.0);
+
+let long = tabular.melt(sales, ["region"], ["revenue", "units"]);
+assert(tabular.rowCount(long) == 10);
+assert(tabular.columns(long)[1] == "variable");
+
+let rolling = tabular.rollingMean(sales, "revenue", 2);
+assert(tabular.columns(rolling)[4] == "revenue_rolling_mean");
+assert(tabular.column(rolling, "revenue_rolling_mean")[1] == 15.0);
+
+let uniqueSales = tabular.dropDuplicates(sales, ["region", "quarter"]);
+assert(tabular.rowCount(uniqueSales) == 4);
+let filtered = tabular.filterRows(sales, fn (row, index) { return row[2] >= 10 && index != 1; });
+assert(tabular.rowCount(filtered) == 2);
+print("advanced tabular OK");

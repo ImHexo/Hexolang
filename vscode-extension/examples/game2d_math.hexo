@@ -1,0 +1,8 @@
+import "stdlib/simple_game.hexo" as game2d;
+assert(game2d.length(game2d.vec2(3, 4)) == 5);
+assert(game2d.distance(game2d.vec2(0, 0), game2d.vec2(3, 4)) == 5);
+assert(game2d.rectContains([0, 0, 10, 10], [5, 5]));
+assert(game2d.rectIntersects([0, 0, 10, 10], [9, 9, 3, 3]));
+assert(game2d.circlesIntersect([0, 0], 3, [5, 0], 2));
+assert(!game2d.rectIntersects([0, 0, 2, 2], [3, 3, 2, 2]));
+print("2D math and collision helpers OK");

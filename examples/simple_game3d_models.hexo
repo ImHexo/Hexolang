@@ -1,0 +1,23 @@
+// Run only after building Hexo with raylib enabled (WITH_RAYLIB=1).
+import "stdlib/simple_game.hexo" as game;
+import "stdlib/simple_game3d.hexo" as world;
+
+game.initWindow(960, 640, "Hexo simple_game3d models");
+game.setTargetFPS(60);
+let cube = world.loadModel("examples/assets/cube.obj");
+let camera = world.Camera3D([4, 3, 5], [0, 0, 0], [0, 1, 0], 45);
+
+while (!game.windowShouldClose()) {
+    game.beginDrawing();
+    game.clearBackground(0x101827);
+    world.withCamera(camera, fn() {
+        world.drawGrid(20, 1);
+        world.drawModelEx(cube, [0, 0.5, 0], [0, 1, 0], clock() * 30, [1, 1, 1], 0x6bb8ff);
+        world.drawModelWires(cube, [0, 0.5, 0], 1.02, 0xffffff);
+    });
+    game.drawText("OBJ model + DrawModelEx + wireframe", 24, 24, 20, 0xffffff);
+    game.endDrawing();
+}
+
+world.unloadModel(cube);
+game.closeWindow();

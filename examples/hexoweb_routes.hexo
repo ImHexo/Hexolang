@@ -1,0 +1,53 @@
+import "stdlib/hexoweb.hexo" as web;
+import "stdlib/json.hexo" as json;
+import "stdlib/system/os.hexo" as os;
+
+fn userHandler(method, path, query, headers, body) {
+    let params = json.get(headers, "params");
+    let queryValues = web.parseQuery(query);
+    let result = json.object();
+    json.set(result, "id", json.get(params, "id"));
+    json.set(result, "search", json.get(queryValues, "q"));
+    return web.json(result);
+}
+fn echoHandler(method, path, query, headers, body) {
+    return web.json(web.parseForm(body));
+}
+fn jsonHandler(method, path, query, headers, body) {
+    return web.json(web.parseJSON(body));
+}
+fn redirectHandler(method, path, query, headers, body) {
+    return web.redirect("/users/redirected", 303);
+}
+fn methodHandler(method, path, query, headers, body) {
+    let result = json.object();
+    json.set(result, "method", method);
+    json.set(result, "body", body);
+    return web.json(result);
+}
+fn passThrough(method, path, query, headers, body) { return nil; }
+fn pageHandler(method, path, query, headers, body) {
+    return web.html(web.htmlPage("<Hexo & Web>", "<main><h1>Hexo site</h1><p>HTML response OK</p></main>"));
+}
+fn infoHandler(method, path, query, headers, body) {
+    let request = web.requestInfo(method, path, query, headers, body);
+    let result = json.object();
+    json.set(result, "session", web.cookie(request, "sid", "missing"));
+    json.set(result, "custom", web.header(request, "x-test", "missing"));
+    return web.json(result);
+}
+
+let app = web.createApp();
+app.use(passThrough);
+app.get("/users/:id", userHandler);
+app.post("/echo", echoHandler);
+app.post("/api", jsonHandler);
+app.put("/resource", methodHandler);
+app.patch("/resource", methodHandler);
+app.delete("/resource", methodHandler);
+app.get("/go", redirectHandler);
+app.serveStatic("/assets", "examples/public");
+app.get("/page", pageHandler);
+app.get("/info", infoHandler);
+let port = int(os.envGet("HEXO_TEST_PORT"));
+app.listen(port, 14);

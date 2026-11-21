@@ -1,0 +1,11 @@
+import "stdlib/system/os.hexo" as os;
+let string path = ".hexo-os-test.tmp";
+print(os.currentDirectory());
+print(os.writeText(path, "Hexo"));
+print(os.fileExists(path));
+print(os.readText(path));
+os.appendText(path, " OS");
+print(os.readText(path));
+print(os.removeFile(path));
+print(os.fileExists(path));
+print(os.envGet("HOME") != nil);

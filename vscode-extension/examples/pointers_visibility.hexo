@@ -1,0 +1,18 @@
+// Hexo 0.5.0: hexadecimal literals, pointers and member visibility.
+let int color = 0xff0000;
+let int value = 10;
+let ptr pointer = &value;
+*pointer = 42;
+print("color:", color);
+print("value through pointer:", *pointer);
+
+class Vault {
+    private int secret = 7;
+    public fn reveal() {
+        return this.secret;
+    }
+}
+
+let vault = Vault();
+print("secret through public method:", vault.reveal());
+// vault.secret; // Runtime error: private member.

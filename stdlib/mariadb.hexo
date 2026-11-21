@@ -1,0 +1,37 @@
+// MariaDB convenience facade over the compatible MariaDB Connector/C driver.
+// MySQL-compatible servers can use the same module; no DB server is bundled.
+import "stdlib/mysql.hexo" as driver;
+
+let open = driver.open;
+let openTLS = driver.openTLS;
+let close = driver.close;
+let exec = driver.exec;
+let execute = driver.execute;
+let query = driver.query;
+let all = driver.all;
+let first = driver.first;
+let scalar = driver.scalar;
+let error = driver.error;
+let prepare = driver.prepare;
+let bindInt = driver.bindInt;
+let bindFloat = driver.bindFloat;
+let bindText = driver.bindText;
+let bindNull = driver.bindNull;
+let bindBool = driver.bindBool;
+let executeStatement = driver.executeStatement;
+let queryStatement = driver.queryStatement;
+let closeStatement = driver.closeStatement;
+let begin = driver.begin;
+let commit = driver.commit;
+let rollback = driver.rollback;
+let transaction = driver.transaction;
+let withTransaction = driver.withTransaction;
+let withConnection = driver.withConnection;
+
+let bindValue = driver.bindValue;
+let bindValues = driver.bindValues;
+let executePrepared = driver.executePrepared;
+let queryPrepared = driver.queryPrepared;
+let executeMany = driver.executeMany;
+let queryObjects = driver.queryObjects;
+let withConnectionTLS = driver.withConnectionTLS;

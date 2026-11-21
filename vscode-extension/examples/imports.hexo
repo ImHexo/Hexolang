@@ -1,0 +1,8 @@
+// Run Hexo from the workspace root so relative module paths resolve as shown.
+import "examples/modules/geometry.hexo" as geometry;
+print(geometry.calculateArea(10.0, 5.0));
+print(geometry.Rectangle.unit());
+
+from "examples/modules/geometry.hexo" import calculateArea, Rectangle;
+print(calculateArea(10.0, 5.0));
+print(Rectangle.unit());

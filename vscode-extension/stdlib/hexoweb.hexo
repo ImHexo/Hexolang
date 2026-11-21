@@ -1,0 +1,210 @@
+// Hexoweb: small synchronous HTTP/HTML framework for local development.
+// The native server binds only to 127.0.0.1. See stdlib/README.md for limits.
+import "stdlib/json.hexo" as jsonlib;
+import "stdlib/system/os.hexo" as os;
+
+let serve = webServe;
+let escapeHTML = htmlEscape;
+let nativeResponse = webResponse;
+let urlEncode = webUrlEncode;
+let urlDecode = webUrlDecode;
+
+fn response(body, status = 200, contentType = "text/html; charset=utf-8", headers = nil) {
+    return nativeResponse(body, status, contentType, headers);
+}
+fn html(body, status = 200) { return response(body, status, "text/html; charset=utf-8"); }
+fn text(body, status = 200) { return response(body, status, "text/plain; charset=utf-8"); }
+fn json(value, status = 200) {
+    return response(jsonlib.stringify(value), status, "application/json; charset=utf-8");
+}
+fn redirect(location, status = 302) {
+    let headers = jsonlib.object();
+    jsonlib.set(headers, "Location", location);
+    return response("", status, "text/plain; charset=utf-8", headers);
+}
+fn notFound(message = "Not Found") { return text(message, 404); }
+fn badRequest(message = "Bad Request") { return text(message, 400); }
+fn serverError(message = "Internal Server Error") { return text(message, 500); }
+
+// Query/form parser. Values are strings; repeated keys become arrays.
+fn parsePairs(source) {
+    let result = jsonlib.object();
+    if (source == nil || source == "") { return result; }
+    for (let part in source.split("&")) {
+        if (part == "") { continue; }
+        let pair = part.split("=");
+        let key = urlDecode(pair[0]);
+        let value = len(pair) > 1 ? urlDecode(pair[1]) : "";
+        if (jsonlib.has(result, key)) {
+            let previous = jsonlib.get(result, key);
+            if (typeof(previous) == "array") { previous.push(value); }
+            else { jsonlib.set(result, key, [previous, value]); }
+        } else { jsonlib.set(result, key, value); }
+    }
+    return result;
+}
+fn parseQuery(queryString) { return parsePairs(queryString); }
+fn parseForm(body) { return parsePairs(body); }
+fn parseJSON(body) { return jsonlib.parse(body); }
+fn parseCookies(headers) {
+    let result = jsonlib.object();
+    let cookie = jsonlib.get(headers, "cookie", "");
+    for (let part in cookie.split(";")) {
+        let entry = part.trim();
+        if (entry == "") { continue; }
+        let pair = entry.split("=");
+        if (len(pair) > 1) { jsonlib.set(result, pair[0].trim(), urlDecode(pair[1].trim())); }
+    }
+    return result;
+}
+
+fn mimeType(path) {
+    let p = path.lower();
+    if (p.endsWith(".html") || p.endsWith(".htm")) { return "text/html; charset=utf-8"; }
+    if (p.endsWith(".css")) { return "text/css; charset=utf-8"; }
+    if (p.endsWith(".js")) { return "text/javascript; charset=utf-8"; }
+    if (p.endsWith(".json")) { return "application/json; charset=utf-8"; }
+    if (p.endsWith(".svg")) { return "image/svg+xml"; }
+    if (p.endsWith(".txt")) { return "text/plain; charset=utf-8"; }
+    if (p.endsWith(".png")) { return "image/png"; }
+    if (p.endsWith(".jpg") || p.endsWith(".jpeg")) { return "image/jpeg"; }
+    if (p.endsWith(".gif")) { return "image/gif"; }
+    if (p.endsWith(".ico")) { return "image/x-icon"; }
+    return "application/octet-stream";
+}
+
+// Minimal interpolation: {{key}} values are HTML-escaped. No template code eval.
+fn render(template, context) {
+    let output = template;
+    for (let key in jsonlib.keys(context)) {
+        let token = "{{" + key + "}}";
+        output = output.replace(token, escapeHTML(jsonlib.get(context, key)));
+    }
+    return output;
+}
+
+fn routeParams(pattern, path) {
+    let patternParts = pattern.split("/");
+    let pathParts = path.split("/");
+    if (len(patternParts) != len(pathParts)) { return nil; }
+    let params = jsonlib.object();
+    for (let i in range(0, len(patternParts))) {
+        let expected = patternParts[i];
+        let actual = urlDecode(pathParts[i]);
+        if (expected.startsWith(":")) {
+            let name = expected.substring(1);
+            if (name == "") { return nil; }
+            jsonlib.set(params, name, actual);
+        } else if (expected != actual) { return nil; }
+    }
+    return params;
+}
+
+class App {
+    fn init() {
+        this.routes = [];
+        this.middlewares = [];
+        this.staticMounts = [];
+    }
+
+    fn add(method, path, handler) {
+        this.routes.push([method.upper(), path, handler]);
+        return this;
+    }
+    fn get(path, handler) { return this.add("GET", path, handler); }
+    fn post(path, handler) { return this.add("POST", path, handler); }
+    fn put(path, handler) { return this.add("PUT", path, handler); }
+    fn patch(path, handler) { return this.add("PATCH", path, handler); }
+    fn delete(path, handler) { return this.add("DELETE", path, handler); }
+    fn head(path, handler) { return this.add("HEAD", path, handler); }
+    fn options(path, handler) { return this.add("OPTIONS", path, handler); }
+    fn use(handler) {
+        this.middlewares.push(handler);
+        return this;
+    }
+    fn serveStatic(prefix, root) {
+        this.staticMounts.push([prefix, root]);
+        return this;
+    }
+
+    fn dispatch(method, path, query, headers, body) {
+        for (let middleware in this.middlewares) {
+            let result = middleware(method, path, query, headers, body);
+            if (result != nil) { return result; }
+        }
+        for (let mount in this.staticMounts) {
+            let prefix = mount[0];
+            if (path.startsWith(prefix)) {
+                let relative = path.substring(len(prefix));
+                if (relative.startsWith("/")) { relative = relative.substring(1); }
+                let decoded = urlDecode(relative);
+                if (decoded.contains("..") || decoded.contains("\\") || decoded.contains("\0")) {
+                    return badRequest("Invalid static path");
+                }
+                let fullPath = mount[1] + "/" + decoded;
+                if (os.fileExists(fullPath)) {
+                    return response(os.readText(fullPath), 200, mimeType(fullPath));
+                }
+            }
+        }
+        let pathMatched = false;
+        let allowed = [];
+        for (let route in this.routes) {
+            let params = routeParams(route[1], path);
+            if (params != nil) {
+                pathMatched = true;
+                if (allowed.indexOf(route[0]) < 0) { allowed.push(route[0]); }
+                let methodMatches = route[0] == method || (method == "HEAD" && route[0] == "GET");
+                if (methodMatches) {
+                    jsonlib.set(headers, "params", params);
+                    try {
+                        return route[2](method, path, query, headers, body);
+                    } catch (error) {
+                        return serverError(string(error));
+                    }
+                }
+            }
+        }
+        if (pathMatched) {
+            if (allowed.indexOf("OPTIONS") < 0) { allowed.push("OPTIONS"); }
+            let allowHeader = jsonlib.object();
+            jsonlib.set(allowHeader, "Allow", allowed.join(", "));
+            if (method == "OPTIONS") { return response("", 204, "text/plain; charset=utf-8", allowHeader); }
+            return response("Method Not Allowed", 405, "text/plain; charset=utf-8", allowHeader);
+        }
+        return notFound("No route for " + method + " " + path);
+    }
+
+    fn listen(port, maxRequests = 0) {
+        return serve(port, this.dispatch, maxRequests);
+    }
+}
+
+fn createApp() { return App(); }
+
+
+fn htmlPage(title, content) {
+    return "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>" + escapeHTML(title) + "</title></head><body>" + content + "</body></html>";
+}
+
+fn requestInfo(method, path, queryString, headers, body) {
+    let request = jsonlib.object();
+    jsonlib.set(request, "method", method);
+    jsonlib.set(request, "path", path);
+    jsonlib.set(request, "query", parseQuery(queryString));
+    jsonlib.set(request, "headers", headers);
+    jsonlib.set(request, "cookies", parseCookies(headers));
+    jsonlib.set(request, "body", body);
+    jsonlib.set(request, "params", jsonlib.get(headers, "params", jsonlib.object()));
+    return request;
+}
+
+fn jsonBody(request) { return parseJSON(jsonlib.get(request, "body", "")); }
+fn formBody(request) { return parseForm(jsonlib.get(request, "body", "")); }
+fn header(request, name, fallback) {
+    let headers = jsonlib.get(request, "headers", jsonlib.object());
+    return jsonlib.get(headers, string(name).lower(), fallback);
+}
+fn cookie(request, name, fallback) {
+    return jsonlib.get(jsonlib.get(request, "cookies", jsonlib.object()), name, fallback);
+}

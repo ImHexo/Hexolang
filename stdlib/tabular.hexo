@@ -1,0 +1,485 @@
+import "stdlib/json.hexo" as json;
+
+// CSV / DataFrame-style operations. Module intentionally named "tabular", not pandas.
+let parseCSV = csvParse;
+let stringifyCSV = csvStringify;
+let fromRows = tabularFromRows;
+let readCSV = tabularReadCSV;
+let toCSV = tabularToCSV;
+let writeCSV = tabularWriteCSV;
+let columns = tabularColumns;
+let rows = tabularRows;
+let shape = tabularShape;
+let head = tabularHead;
+let column = tabularColumn;
+let select = tabularSelect;
+let sortBy = tabularSortBy;
+let filterEquals = tabularFilterEquals;
+let inferTypes = tabularInferTypes;
+
+fn rowCount(table) { return shape(table)[0]; }
+fn columnCount(table) { return shape(table)[1]; }
+fn tail(table, count) {
+    let data = rows(table);
+    let start = len(data) - count;
+    if (start < 0) { start = 0; }
+    let selected = [];
+    for (let i in range(start, len(data))) { selected.push(data[i]); }
+    return fromRows(concatArrays([columns(table)], selected), true);
+}
+fn renameColumns(table, names) {
+    let oldRows = rows(table);
+    let all = [names];
+    for (let row in oldRows) { all.push(row); }
+    return fromRows(all, true);
+}
+
+fn castColumn(table, name, targetType) {
+    let idx = columns(table).indexOf(name);
+    if (idx < 0) { throw "tabular column not found"; }
+    let all = [columns(table)];
+    for (let row in rows(table)) {
+        let copy = row.slice(0);
+        let value = copy[idx];
+        if (targetType == "int") { copy[idx] = int(value); }
+        else if (targetType == "float") { copy[idx] = float(value); }
+        else if (targetType == "string") { copy[idx] = string(value); }
+        else if (targetType == "bool") {
+            let normalized = string(value).lower().trim();
+            copy[idx] = normalized == "true" || normalized == "1" || normalized == "yes";
+        } else { throw "unsupported target type"; }
+        all.push(copy);
+    }
+    return fromRows(all, true);
+}
+
+fn countBy(table, name) {
+    let values = column(table, name);
+    let unique = [];
+    let counts = [];
+    for (let value in values) {
+        let idx = unique.indexOf(value);
+        if (idx < 0) { unique.push(value); counts.push(1); }
+        else { counts[idx] = counts[idx] + 1; }
+    }
+    let result = [[name, "count"]];
+    for (let i in range(0, len(unique))) { result.push([unique[i], counts[i]]); }
+    return fromRows(result, true);
+}
+
+
+// Higher-level table operations. Tables are row-oriented and keep scalar cells.
+fn distinct(values) {
+    let result = [];
+    for (let value in values) {
+        if (result.indexOf(value) < 0) { result.push(value); }
+    }
+    return result;
+}
+
+fn groupByCount(table, name) {
+    let values = column(table, name);
+    let uniqueValues = [];
+    let counts = [];
+    for (let value in values) {
+        let index = uniqueValues.indexOf(value);
+        if (index < 0) { uniqueValues.push(value); counts.push(1); }
+        else { counts[index] = counts[index] + 1; }
+    }
+    let data = [[name, "count"]];
+    for (let i in range(0, len(uniqueValues))) { data.push([uniqueValues[i], counts[i]]); }
+    return fromRows(data, true);
+}
+
+fn dropMissing(table, name) {
+    let index = columns(table).indexOf(name);
+    if (index < 0) { throw "tabular column not found"; }
+    let data = [columns(table)];
+    for (let row in rows(table)) {
+        let value = row[index];
+        if (value != nil && value != "") { data.push(row); }
+    }
+    return fromRows(data, true);
+}
+
+fn fillMissing(table, name, replacement) {
+    let index = columns(table).indexOf(name);
+    if (index < 0) { throw "tabular column not found"; }
+    let data = [columns(table)];
+    for (let row in rows(table)) {
+        let copy = row.slice(0);
+        if (copy[index] == nil || copy[index] == "") { copy[index] = replacement; }
+        data.push(copy);
+    }
+    return fromRows(data, true);
+}
+
+fn mapColumn(table, name, callback) {
+    let index = columns(table).indexOf(name);
+    if (index < 0) { throw "tabular column not found"; }
+    let data = [columns(table)];
+    for (let row in rows(table)) {
+        let copy = row.slice(0);
+        copy[index] = callback(copy[index]);
+        data.push(copy);
+    }
+    return fromRows(data, true);
+}
+
+fn numericStats(table, name) {
+    let values = column(table, name);
+    let count = 0;
+    let total = 0.0;
+    let minimum = nil;
+    let maximum = nil;
+    for (let value in values) {
+        let kind = typeof(value);
+        if (kind == "int" || kind == "float") {
+            let number = float(value);
+            total = total + number;
+            count = count + 1;
+            if (minimum == nil || number < minimum) { minimum = number; }
+            if (maximum == nil || number > maximum) { maximum = number; }
+        }
+    }
+    let average = nil;
+    if (count > 0) { average = total / count; }
+    return [count, total, average, minimum, maximum];
+}
+
+fn sum(table, name) { return numericStats(table, name)[1]; }
+fn mean(table, name) { return numericStats(table, name)[2]; }
+fn min(table, name) { return numericStats(table, name)[3]; }
+fn max(table, name) { return numericStats(table, name)[4]; }
+
+fn describe(table) {
+    let data = [["column", "count", "sum", "mean", "min", "max"]];
+    for (let name in columns(table)) {
+        let stats = numericStats(table, name);
+        data.push([name, stats[0], stats[1], stats[2], stats[3], stats[4]]);
+    }
+    return fromRows(data, true);
+}
+
+fn toObjects(table) {
+    let output = [];
+    let names = columns(table);
+    for (let row in rows(table)) {
+        let item = json.object();
+        for (let i in range(0, len(names))) { json.set(item, names[i], row[i]); }
+        output.push(item);
+    }
+    return output;
+}
+
+fn fromObjects(items) {
+    if (len(items) == 0) { return fromRows([[]], true); }
+    let names = json.keys(items[0]);
+    let data = [names];
+    for (let item in items) {
+        let row = [];
+        for (let name in names) { row.push(json.get(item, name)); }
+        data.push(row);
+    }
+    return fromRows(data, true);
+}
+
+// More table manipulation helpers, still backed by row-oriented storage.
+let unique = distinct;
+let valueCounts = groupByCount;
+
+fn nilValues(count) {
+    let values = [];
+    for (let i in range(0, count)) { values.push(nil); }
+    return values;
+}
+
+fn concatArrays(first, second) {
+    let values = [];
+    for (let item in first) { values.push(item); }
+    for (let item in second) { values.push(item); }
+    return values;
+}
+
+fn renameColumn(table, oldName, newName) {
+    let names = columns(table);
+    let index = names.indexOf(oldName);
+    if (index < 0) { throw "tabular column not found"; }
+    names[index] = newName;
+    return fromRows(concatArrays([names], rows(table)), true);
+}
+
+fn dropColumn(table, name) {
+    let names = columns(table);
+    let index = names.indexOf(name);
+    if (index < 0) { throw "tabular column not found"; }
+    let nextNames = [];
+    for (let i in range(0, len(names))) {
+        if (i != index) { nextNames.push(names[i]); }
+    }
+    let data = [nextNames];
+    for (let row in rows(table)) {
+        let nextRow = [];
+        for (let i in range(0, len(row))) {
+            if (i != index) { nextRow.push(row[i]); }
+        }
+        data.push(nextRow);
+    }
+    return fromRows(data, true);
+}
+
+fn addColumn(table, name, values) {
+    let data = [concatArrays(columns(table), [name])];
+    let sourceRows = rows(table);
+    if (len(values) != len(sourceRows)) { throw "tabular.addColumn values length must match row count"; }
+    for (let i in range(0, len(sourceRows))) {
+        data.push(concatArrays(sourceRows[i], [values[i]]));
+    }
+    return fromRows(data, true);
+}
+
+fn join(left, right, leftKey, rightKey, joinType = "inner") {
+    if (joinType != "inner" && joinType != "left" && joinType != "right" && joinType != "full") {
+        throw "tabular.join type must be inner, left, right or full";
+    }
+    let leftNames = columns(left);
+    let rightNames = columns(right);
+    let leftIndex = leftNames.indexOf(leftKey);
+    let rightIndex = rightNames.indexOf(rightKey);
+    if (leftIndex < 0 || rightIndex < 0) { throw "tabular.join key column not found"; }
+
+    let outputRightNames = [];
+    let outputNames = leftNames.slice(0);
+    for (let name in rightNames) {
+        let candidate = name;
+        while (outputNames.indexOf(candidate) >= 0) { candidate = "right_" + candidate; }
+        outputNames.push(candidate);
+        outputRightNames.push(candidate);
+    }
+
+    let leftRows = rows(left);
+    let rightRows = rows(right);
+    let matchedRight = [];
+    let output = [outputNames];
+    for (let leftRow in leftRows) {
+        let matched = false;
+        for (let i in range(0, len(rightRows))) {
+            let rightRow = rightRows[i];
+            if (leftRow[leftIndex] == rightRow[rightIndex]) {
+                output.push(concatArrays(leftRow, rightRow));
+                matched = true;
+                if (matchedRight.indexOf(i) < 0) { matchedRight.push(i); }
+            }
+        }
+        if (!matched && (joinType == "left" || joinType == "full")) {
+            output.push(concatArrays(leftRow, nilValues(len(rightNames))));
+        }
+    }
+    if (joinType == "right" || joinType == "full") {
+        for (let i in range(0, len(rightRows))) {
+            if (matchedRight.indexOf(i) < 0) {
+                output.push(concatArrays(nilValues(len(leftNames)), rightRows[i]));
+            }
+        }
+    }
+    return fromRows(output, true);
+}
+
+// Generic grouping, pivot/unpivot and row filtering helpers.
+// Aggregation specs use [outputName, sourceColumn, operation].
+// Supported operations: count, countAll, sum, mean, min, max, first, last.
+fn aggregateValues(values, operation) {
+    let op = string(operation).lower();
+    if (op == "countall") { return len(values); }
+    if (op == "first") { return len(values) == 0 ? nil : values[0]; }
+    if (op == "last") { return len(values) == 0 ? nil : values[len(values) - 1]; }
+
+    let count = 0;
+    let total = 0.0;
+    let minimum = nil;
+    let maximum = nil;
+    for (let value in values) {
+        if (value == nil || value == "") { continue; }
+        if (op == "count") { count = count + 1; continue; }
+        let kind = typeof(value);
+        if (kind != "int" && kind != "float") { continue; }
+        let number = float(value);
+        count = count + 1;
+        total = total + number;
+        if (minimum == nil || number < minimum) { minimum = number; }
+        if (maximum == nil || number > maximum) { maximum = number; }
+    }
+    if (op == "count") { return count; }
+    if (op == "sum") { return total; }
+    if (count == 0) { return nil; }
+    if (op == "mean") { return total / count; }
+    if (op == "min") { return minimum; }
+    if (op == "max") { return maximum; }
+    throw "unsupported tabular aggregate operation: " + op;
+}
+
+fn groupByAggregate(table, keyName, aggregates) {
+    let names = columns(table);
+    let keyIndex = names.indexOf(keyName);
+    if (keyIndex < 0) { throw "tabular.groupByAggregate key column not found"; }
+    if (typeof(aggregates) != "array") { throw "tabular.groupByAggregate expects aggregation specs"; }
+    let aggregateIndexes = [];
+    let outputNames = [keyName];
+    for (let spec in aggregates) {
+        if (len(spec) != 3) { throw "aggregation spec must be [outputName, sourceColumn, operation]"; }
+        let outputName = string(spec[0]);
+        let sourceName = spec[1];
+        let operation = string(spec[2]);
+        let sourceIndex = sourceName == nil ? -1 : names.indexOf(sourceName);
+        if (string(operation).lower() != "countall" && sourceIndex < 0) { throw "tabular aggregate source column not found"; }
+        outputNames.push(outputName);
+        aggregateIndexes.push([sourceIndex, operation]);
+    }
+
+    let groupedKeys = [];
+    let groupedRows = [];
+    for (let row in rows(table)) {
+        let key = row[keyIndex];
+        let index = groupedKeys.indexOf(key);
+        if (index < 0) {
+            groupedKeys.push(key);
+            groupedRows.push([row]);
+        } else { groupedRows[index].push(row); }
+    }
+
+    let output = [outputNames];
+    for (let groupIndex in range(0, len(groupedKeys))) {
+        let groupRows = groupedRows[groupIndex];
+        let resultRow = [groupedKeys[groupIndex]];
+        for (let aggregateIndex in range(0, len(aggregateIndexes))) {
+            let spec = aggregates[aggregateIndex];
+            let sourceIndex = aggregateIndexes[aggregateIndex][0];
+            let operation = aggregateIndexes[aggregateIndex][1];
+            let values = [];
+            if (string(operation).lower() == "countall") {
+                values = groupRows;
+            } else {
+                for (let row in groupRows) { values.push(row[sourceIndex]); }
+            }
+            resultRow.push(aggregateValues(values, operation));
+        }
+        output.push(resultRow);
+    }
+    return fromRows(output, true);
+}
+
+fn pivot(table, indexColumn, pivotColumn, valueColumn, operation = "sum") {
+    let names = columns(table);
+    let indexAt = names.indexOf(indexColumn);
+    let pivotAt = names.indexOf(pivotColumn);
+    let valueAt = names.indexOf(valueColumn);
+    if (indexAt < 0 || pivotAt < 0 || valueAt < 0) { throw "tabular.pivot column not found"; }
+    let sourceRows = rows(table);
+    let indexValues = [];
+    let pivotValues = [];
+    for (let row in sourceRows) {
+        if (indexValues.indexOf(row[indexAt]) < 0) { indexValues.push(row[indexAt]); }
+        if (pivotValues.indexOf(row[pivotAt]) < 0) { pivotValues.push(row[pivotAt]); }
+    }
+    let outputNames = [indexColumn];
+    for (let value in pivotValues) { outputNames.push(string(value)); }
+    let output = [outputNames];
+    for (let indexValue in indexValues) {
+        let resultRow = [indexValue];
+        for (let pivotValue in pivotValues) {
+            let matched = [];
+            for (let row in sourceRows) {
+                if (row[indexAt] == indexValue && row[pivotAt] == pivotValue) { matched.push(row[valueAt]); }
+            }
+            resultRow.push(aggregateValues(matched, operation));
+        }
+        output.push(resultRow);
+    }
+    return fromRows(output, true);
+}
+
+fn melt(table, idColumns, valueColumns = nil, variableName = "variable", valueName = "value") {
+    let names = columns(table);
+    if (typeof(idColumns) != "array") { throw "tabular.melt idColumns must be an array"; }
+    let idIndexes = [];
+    let outputNames = idColumns.slice(0);
+    for (let name in idColumns) {
+        let index = names.indexOf(name);
+        if (index < 0) { throw "tabular.melt id column not found"; }
+        idIndexes.push(index);
+    }
+    if (valueColumns == nil) {
+        valueColumns = [];
+        for (let name in names) { if (idColumns.indexOf(name) < 0) { valueColumns.push(name); } }
+    }
+    if (typeof(valueColumns) != "array") { throw "tabular.melt valueColumns must be an array"; }
+    outputNames.push(variableName);
+    outputNames.push(valueName);
+    let output = [outputNames];
+    for (let row in rows(table)) {
+        for (let name in valueColumns) {
+            let valueIndex = names.indexOf(name);
+            if (valueIndex < 0) { throw "tabular.melt value column not found"; }
+            let resultRow = [];
+            for (let index in idIndexes) { resultRow.push(row[index]); }
+            resultRow.push(name);
+            resultRow.push(row[valueIndex]);
+            output.push(resultRow);
+        }
+    }
+    return fromRows(output, true);
+}
+
+fn filterRows(table, predicate) {
+    if (typeof(predicate) != "function") { throw "tabular.filterRows expects a function"; }
+    let output = [columns(table)];
+    let index = 0;
+    for (let row in rows(table)) {
+        if (predicate(row, index)) { output.push(row); }
+        index = index + 1;
+    }
+    return fromRows(output, true);
+}
+
+fn dropDuplicates(table, subset = nil) {
+    let names = columns(table);
+    if (subset == nil) { subset = names; }
+    if (typeof(subset) != "array") { throw "tabular.dropDuplicates subset must be an array"; }
+    let indexes = [];
+    for (let name in subset) {
+        let index = names.indexOf(name);
+        if (index < 0) { throw "tabular.dropDuplicates column not found"; }
+        indexes.push(index);
+    }
+    let output = [names];
+    let seen = [];
+    for (let row in rows(table)) {
+        let key = [];
+        for (let index in indexes) { key.push(row[index]); }
+        let duplicate = false;
+        for (let previous in seen) {
+            let equal = len(previous) == len(key);
+            if (equal) {
+                for (let i in range(0, len(key))) { if (previous[i] != key[i]) { equal = false; break; } }
+            }
+            if (equal) { duplicate = true; break; }
+        }
+        if (!duplicate) { seen.push(key); output.push(row); }
+    }
+    return fromRows(output, true);
+}
+
+fn rollingMean(table, sourceColumn, window, outputName = nil) {
+    if (window < 1 || int(window) != window) { throw "tabular.rollingMean window must be a positive integer"; }
+    if (outputName == nil) { outputName = sourceColumn + "_rolling_mean"; }
+    let values = column(table, sourceColumn);
+    let means = [];
+    for (let i in range(0, len(values))) {
+        let start = i - window + 1;
+        if (start < 0) { start = 0; }
+        let slice = [];
+        for (let j in range(start, i + 1)) { slice.push(values[j]); }
+        means.push(aggregateValues(slice, "mean"));
+    }
+    return addColumn(table, outputName, means);
+}
