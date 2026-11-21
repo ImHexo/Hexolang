@@ -1,3 +1,6 @@
+<p align="center">
+    <img src="banner.png" alt="Hexlolang Banner" width="100%">
+</p>
 # Hexo 0.5.3 — Runtime, librerie standard e toolchain
 
 Hexo è un linguaggio di scripting gradualmente tipizzato con interprete x86-64 Assembly e bridge nativo C. Questo kit riunisce runtime, moduli `.hexo`, adapter nativi, esempi, test automatici ed estensione VS Code.
